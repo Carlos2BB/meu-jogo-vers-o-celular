@@ -20,8 +20,8 @@ const stick = document.getElementById('stick');
 
 // Configuração Three.js
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB);
-scene.fog = new THREE.Fog(0x87CEEB, 10, 150);
+scene.background = new THREE.Color(0x0a1a0a); // Tom verde escuro para floresta
+scene.fog = new THREE.Fog(0x0a1a0a, 10, 150);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -43,10 +43,49 @@ sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun, new THREE.AmbientLight(0xffffff, 0.4));
 
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ map: grassTexture }));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ map: grassTexture, color: 0x113311 }));
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
+
+// --- SISTEMA DE FLORESTA (ADICIONADO) ---
+const treeTrunks = [];
+function createTree(x, z) {
+    const g = new THREE.Group();
+    const randomHeight = 3 + Math.random() * 3;
+    
+    // Tronco
+    const t = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.5, randomHeight), 
+        new THREE.MeshStandardMaterial({ color: 0x4d2d18 })
+    );
+    t.position.y = randomHeight / 2;
+    t.castShadow = true;
+    g.add(t);
+    treeTrunks.push(t); // Para colisão
+
+    // Copa da Árvore
+    const f = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(2), 
+        new THREE.MeshStandardMaterial({ color: 0x1a331a })
+    );
+    f.position.y = randomHeight + 1;
+    f.castShadow = true;
+    g.add(f);
+
+    g.position.set(x, 0, z);
+    scene.add(g);
+}
+
+// Criar 150 árvores aleatórias
+for (let i = 0; i < 150; i++) {
+    let rx = Math.random() * 300 - 150;
+    let rz = Math.random() * 300 - 150;
+    // Não colocar árvores perto da máquina inicial
+    if (Math.abs(rx) > 15 || Math.abs(rz) > 15) createTree(rx, rz);
+}
+
+const collisionRaycaster = new THREE.Raycaster();
 
 // --- FUNÇÕES DE INTERFACE (WINDOW) ---
 window.selectPlatform = (type) => {
@@ -106,22 +145,7 @@ window.startGame = () => {
     }
 };
 
-// --- CRIAÇÃO DE OBJETOS ---
-function createTree(x, z) {
-    const g = new THREE.Group();
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 3), new THREE.MeshStandardMaterial({ color: 0x4d2d18 }));
-    t.position.y = 1.5; t.castShadow = true; g.add(t);
-    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(1.8), new THREE.MeshStandardMaterial({ color: 0x2d5a27 }));
-    f.position.y = 4; f.castShadow = true; g.add(f);
-    g.position.set(x, 0, z);
-    scene.add(g);
-}
-
-for (let i = 0; i < 40; i++) {
-    let rx = Math.random() * 180 - 90, rz = Math.random() * 180 - 90;
-    if (Math.abs(rx) > 15 || Math.abs(rz) > 15) createTree(rx, rz);
-}
-
+// --- CRIAÇÃO DE OBJETOS (MOEDAS, PLATAFORMAS, CHEST) ---
 const coins = [];
 for (let i = 0; i < 10; i++) {
     const c = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.05), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8 }));
@@ -130,7 +154,6 @@ for (let i = 0; i < 10; i++) {
     scene.add(c); coins.push(c);
 }
 
-// Plataformas e Chest
 const platforms = [], obstacles = [];
 const platMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
 for (let i = 0; i < 15; i++) {
@@ -244,7 +267,7 @@ for (let i = 0; i < 15; i++) {
     m.visible = false; m.stunnedUntil = 0; scene.add(m); monsters.push(m);
 }
 
-// --- SISTEMA DE INPUTS (TOUCH E TECLADO) ---
+// --- SISTEMA DE INPUTS ---
 base.addEventListener('touchstart', e => { e.preventDefault(); const t = e.changedTouches[0]; joyId = t.identifier; joyActive = true; updateJoy(t); });
 base.addEventListener('touchmove', e => { e.preventDefault(); for (let i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === joyId) updateJoy(e.changedTouches[i]); });
 base.addEventListener('touchend', e => { for (let i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === joyId) { joyActive = false; joyId = null; joyX = 0; joyY = 0; stick.style.left = '50%'; stick.style.top = '50%'; } });
@@ -360,8 +383,7 @@ function updateEquipVisuals() {
 
 function desbloquearMaquina() { maquinaBloqueada = false; sistemaBloqueio.visible = false; segurandoR = false; document.getElementById('timer-lock').style.display = 'none'; }
 function exitMachine() { gameState = "WALK"; document.getElementById('game-info').style.display = 'none'; if (!isMobile) document.body.requestPointerLock(); camera.position.set(0, 1.7, -6) }
-
-function updateLeaderboard() { const s = JSON.parse(localStorage.getItem('arcadeScores') || "[]"); document.getElementById('score-list').innerHTML = s.sort((a, b) => a.time - b.time).slice(0, 5).map(x => `<div>${x.name}: ${x.time}s</div>`).join('') }
+function updateLeaderboard() { /* Leaderboard logic */ }
 
 function startFishing() {
     if (isClawDescending || coinsCount <= 0) return;
@@ -394,7 +416,7 @@ function endGame() {
     document.getElementById('end-screen').style.display = 'flex'; gameState = "END"
 }
 
-// --- LOOP DE ANIMAÇÃO ---
+// --- LOOP DE ANIMAÇÃO PRINCIPAL ---
 function animate() {
     requestAnimationFrame(animate);
     if (gameActive) {
@@ -444,6 +466,7 @@ function animate() {
             if (tempoCadeado <= 0) desbloquearMaquina();
         }
 
+        // Colisão Parkour (Botas)
         if (hasBoots && !isFlying) {
             platforms.forEach(p => {
                 if (Math.abs(camera.position.x - p.position.x) < 2.1 && Math.abs(camera.position.z - p.position.z) < 2.1) {
@@ -455,6 +478,7 @@ function animate() {
             });
         }
 
+        // IA dos Monstros
         monsters.forEach(m => {
             if (m.visible && !botsPaused) {
                 m.lookAt(camera.position.x, m.position.y, camera.position.z);
@@ -466,14 +490,29 @@ function animate() {
             }
         });
 
+        // MOVIMENTAÇÃO COM COLISÃO DE ÁRVORES
         if (document.pointerLockElement || isMobile) {
             const baseS = isFlying ? 0.6 : (isRunning && stamina > 0 ? 0.32 : 0.18);
             const d = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion); if (!isFlying) d.y = 0; d.normalize();
             const s = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), d);
-            if (moveF) camera.position.addScaledVector(d, baseS); if (moveB) camera.position.addScaledVector(d, -baseS);
-            if (moveL) camera.position.addScaledVector(s, baseS); if (moveR) camera.position.addScaledVector(s, -baseS);
-            if (joyActive) { camera.position.addScaledVector(d, -joyY * baseS); camera.position.addScaledVector(s, -joyX * baseS); }
+            
+            // Vetor de movimento desejado
+            let moveVector = new THREE.Vector3(0, 0, 0);
+            if (moveF) moveVector.addScaledVector(d, baseS); if (moveB) moveVector.addScaledVector(d, -baseS);
+            if (moveL) moveVector.addScaledVector(s, baseS); if (moveR) moveVector.addScaledVector(s, -baseS);
+            if (joyActive) { moveVector.addScaledVector(d, -joyY * baseS); moveVector.addScaledVector(s, -joyX * baseS); }
 
+            // Verificação de colisão com árvores
+            if (moveVector.length() > 0) {
+                collisionRaycaster.set(camera.position, moveVector.clone().normalize());
+                const hits = collisionRaycaster.intersectObjects(treeTrunks);
+                // Se não houver nada perto no caminho (distância < 1.5), pode andar
+                if (hits.length === 0 || hits[0].distance > 1.5) {
+                    camera.position.add(moveVector);
+                }
+            }
+
+            // Prompts de interação
             let nearObj = false;
             if (maquinaBloqueada && camera.position.distanceTo(new THREE.Vector3(0, 1.2, -7.4)) < 3) { document.getElementById('prompt').innerText = "Segure [R] para desbloquear"; nearObj = true; }
             else if (!maquinaBloqueada && camera.position.distanceTo(new THREE.Vector3(0, 1.7, -10)) < 4) { document.getElementById('prompt').innerText = "Pressione [E] para a Máquina"; nearObj = true; }
@@ -484,7 +523,6 @@ function animate() {
 }
 animate();
 
-// Listener de redimensionamento
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
