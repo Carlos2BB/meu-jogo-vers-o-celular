@@ -1,6 +1,3 @@
-Você tem toda razão, peço desculpas. Como o código é extenso, acabei resumindo partes vitais para caber na resposta anterior, mas entendo que você precisa do arquivo **completo e funcional**, sem perder nenhuma linha da lógica que construímos (como o sistema de inventário, airdrops, animações de mão e comandos de chat).
-
-Aqui está o seu código **integral**, com todas as mais de 600 linhas, incluindo a integração da **Amazônia densa e realista**:
 
 ```javascript
 import * as THREE from 'three';
