@@ -1,0 +1,90 @@
+body {
+    margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif;
+    background: #000; user-select: none; touch-action: none;
+    width: 100vw; height: 100vh;
+}
+canvas { display: block; width: 100% !important; height: 100% !important; }
+
+#crosshair {
+    position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
+    background: rgba(255,255,255,0.7); border-radius: 50%;
+    transform: translate(-50%, -50%); pointer-events: none;
+    border: 1px solid #000; mix-blend-mode: difference;
+}
+
+#ui-layer {
+    position: absolute; width: 100%; height: 100%; pointer-events: none;
+    display: flex; flex-direction: column; justify-content: space-between;
+    align-items: center; padding: 30px; box-sizing: border-box;
+    color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.stats-container { display: flex; gap: 20px; pointer-events: auto; align-items: center; }
+.stats {
+    background: rgba(0,0,0,0.7); color: #ffd700; padding: 10px 20px;
+    border-radius: 30px; font-size: 18px; border: 2px solid #ffd700;
+}
+
+#stamina-container {
+    width: 200px; height: 20px; background: rgba(0,0,0,0.5);
+    border: 2px solid #fff; border-radius: 10px; overflow: hidden;
+}
+#stamina-bar { width: 100%; height: 100%; background: #00ff88; transition: width 0.1s linear; }
+
+#prompt {
+    color: #fff; font-size: 24px; font-weight: bold; background: rgba(0,0,0,0.6);
+    padding: 15px 25px; border-radius: 15px; display: none; border-bottom: 4px solid #ffd700;
+}
+
+#setup-screen, #end-screen, #platform-screen {
+    position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+    display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100;
+}
+#platform-screen { z-index: 1000; }
+#end-screen { display: none; z-index: 101; color: #fff; }
+
+input, select { padding: 10px; font-size: 18px; border-radius: 5px; border: none; margin: 10px; width: 250px; }
+button { padding: 10px 20px; font-size: 20px; cursor: pointer; background: #ffd700; border: none; border-radius: 5px; font-weight: bold; margin: 5px; }
+
+#leaderboard {
+    position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8);
+    padding: 15px; border-radius: 10px; border: 1px solid #ffd700; color: #fff; font-size: 14px;
+}
+
+#game-info {
+    position: absolute; top: 100px; right: 20px; background: rgba(0,0,0,0.8);
+    color: #fff; padding: 20px; border-radius: 15px; display: none; border: 2px solid #00ffff;
+}
+
+#inventory-ui { position: absolute; bottom: 20px; display: flex; gap: 10px; pointer-events: auto; }
+.inv-slot {
+    width: 65px; height: 65px; background: rgba(0,0,0,0.6); border: 2px solid #555;
+    border-radius: 10px; display: flex; justify-content: center; align-items: center;
+    font-size: 9px; color: #aaa; text-align: center; cursor: pointer;
+}
+.inv-slot.active { border-color: #ffd700; color: #fff; background: rgba(255,215,0,0.2); }
+
+#game-chat {
+    position: absolute; bottom: 20px; left: 20px; width: 300px; height: 30px;
+    font-size: 16px; background: rgba(0,0,0,0.8); color: #00ff88;
+    border: 2px solid #00ff88; outline: none; z-index: 200; padding: 5px 10px;
+    display: none; border-radius: 5px; pointer-events: auto;
+}
+
+#timer-lock {
+    position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 40px; color: #ff3333; font-weight: bold; display: none; text-shadow: 2px 2px 5px #000;
+}
+
+#fly-status {
+    position: absolute; top: 150px; left: 20px; color: #00ff88;
+    font-weight: bold; font-size: 14px; display: none; text-shadow: 1px 1px 2px #000;
+}
+
+/* CONTROLES MOBILE */
+#mobile-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+.joy-area { position: absolute; bottom: 40px; left: 40px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; }
+#stick { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.action-grid { position: absolute; bottom: 40px; right: 40px; display: grid; grid-template-columns: repeat(2, 70px); gap: 15px; pointer-events: auto; }
+.m-btn { width: 70px; height: 70px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 50%; color: #fff; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; }
+#btn-shoot { grid-column: span 2; width: 100%; border-radius: 10px; background: rgba(255,0,0,0.3); height: 60px; }
