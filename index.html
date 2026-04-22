@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Park - Seleção</title>
+    <style>
+        body {
+            margin: 0;
+            background: radial-gradient(circle, #1a1a1a, #000);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+        }
+        h1 { color: #ffd700; font-size: 2.5em; margin-bottom: 20px; }
+        p { line-height: 1.6; font-size: 1.1em; color: #ddd; margin-bottom: 30px; }
+        .buttons { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-decoration: none;
+            color: #000;
+            background: #ffd700;
+            border-radius: 10px;
+            transition: transform 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+        .btn:hover { transform: scale(1.05); background: #fff; }
+        .pc { background: #00ffff; }
+        .mobile { background: #00ff88; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ARCADE PARK CHALLENGE</h1>
+        <p>
+            Seja bem vindo ao meu primeiro jogo, vc tem o objetivo de procurar moedas pelo mapa para pegar os premios de uma maquina para ganhar, so que não é tão facil assim, no jogo existem nextbot que vem atras de vc para não deixar vc completar o desafio. 
+            <br><br>
+            No jogo existem alguns poderes, são eles:<br>
+            <b>A Faca:</b> serve para vc destrancar uma barreira que vai estar em volta da maquina de pegar premios para ai sim vc poder usar ela.<br>
+            <b>A Arma:</b> serve para vc paralisar os nextbot por 5 segundos para ficar mais facil de fugir.<br>
+            <b>As Botas:</b> serve para vc ter ascesso ao parkour, e no final dele tem um báu com 10 moedas.<br>
+            <br>
+            Se vc não quiser usar a faca, tem tambem a opção de usar o <b>R</b> para desbloquear a máquina (leva 30 segundos). Esse é um jogo de quem termina mais rapido, por isso do cronometro. Lembrando: é o meu primeiro jogo e não vai estar 100% perfeito. Boa sorte!
+        </p>
+
+        <div class="buttons">
+            <a href="index.computador.html" class="btn pc">JOGAR NO COMPUTADOR</a>
+            <a href="index.celular.html" class="btn mobile">JOGAR NO CELULAR</a>
+        </div>
+    </div>
+
+</body>
+</html>
