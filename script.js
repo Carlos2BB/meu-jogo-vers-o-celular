@@ -10,7 +10,7 @@ let podeVoar = false, isFlying = false, lastSpacePress = 0;
 let hasKnife = false, hasGun = false, hasBoots = false;
 let maquinaBloqueada = true, tempoCadeado = 30.0, segurandoR = false;
 
-// --- CENA E RENDER ---
+// --- CENA E RENDERR ---
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a1a0a);
 scene.fog = new THREE.Fog(0x0a1a0a, 10, 145);
