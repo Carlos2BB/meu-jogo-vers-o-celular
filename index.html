@@ -4,10 +4,8 @@
 <meta charset="UTF-8">
 <title>Arcade Park - Nextbot Edition</title>
 <style>
-/* CSS Ajustado para não esticar */
 body{margin:0;overflow:hidden;font-family:'Segoe UI',sans-serif;background:#000;user-select:none;touch-action:none;width:100vw;height:100vh;}
 canvas { display: block; width: 100% !important; height: 100% !important; }
-
 #crosshair{position:absolute;top:50%;left:50%;width:8px;height:8px;background:rgba(255,255,255,0.7);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;border:1px solid #000;mix-blend-mode:difference}
 #ui-layer{position:absolute;width:100%;height:100%;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:30px;box-sizing:border-box;color:#fff;text-shadow:2px 2px 4px rgba(0,0,0,0.8)}
 .stats-container{display:flex;gap:20px;pointer-events:auto;align-items:center}
@@ -22,8 +20,8 @@ input,select{padding:10px;font-size:18px;border-radius:5px;border:none;margin:10
 button{padding:10px 20px;font-size:20px;cursor:pointer;background:#ffd700;border:none;border-radius:5px;font-weight:bold;margin:5px}
 #leaderboard{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.8);padding:15px;border-radius:10px;border:1px solid #ffd700;color:#fff;font-size:14px}
 #game-info{position:absolute;top:100px;right:20px;background:rgba(0,0,0,0.8);color:#fff;padding:20px;border-radius:15px;display:none;border:2px solid #00ffff}
-#inventory-ui{position:absolute;bottom:20px;display:flex;gap:10px;pointer-events:none}
-.inv-slot{width:65px;height:65px;background:rgba(0,0,0,0.6);border:2px solid #555;border-radius:10px;display:flex;justify-content:center;align-items:center;font-size:9px;color:#aaa;text-align:center}
+#inventory-ui{position:absolute;bottom:20px;display:flex;gap:10px;pointer-events:auto}
+.inv-slot{width:65px;height:65px;background:rgba(0,0,0,0.6);border:2px solid #555;border-radius:10px;display:flex;justify-content:center;align-items:center;font-size:9px;color:#aaa;text-align:center;cursor:pointer}
 .inv-slot.active{border-color:#ffd700;color:#fff;background:rgba(255,215,0,0.2)}
 #game-chat {position: absolute;bottom: 20px;left: 20px;width: 300px;height: 30px;font-size: 16px;background: rgba(0,0,0,0.8);color: #00ff88;border: 2px solid #00ff88;outline: none;z-index: 200;padding: 5px 10px;display: none;border-radius: 5px;pointer-events: auto;}
 #timer-lock {position: absolute;top: 60%;left: 50%;transform: translate(-50%, -50%);font-size: 40px;color: #ff3333;font-weight: bold;display: none;text-shadow: 2px 2px 5px #000;}
@@ -32,10 +30,10 @@ button{padding:10px 20px;font-size:20px;cursor:pointer;background:#ffd700;border
 /* CONTROLES MOBILE */
 #mobile-ui {position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; display:none;}
 .joy-area {position:absolute; bottom:40px; left:40px; width:150px; height:150px; background:rgba(255,255,255,0.1); border-radius:50%; pointer-events:auto;}
-#stick {position:absolute; top:50%; left:50%; width:60px; height:60px; background:rgba(255,255,255,0.4); border-radius:50%; transform:translate(-50%, -50%);}
-.action-grid {position:absolute; bottom:40px; right:40px; display:grid; grid-template-columns:repeat(3, 70px); gap:15px; pointer-events:auto;}
-.m-btn {width:70px; height:70px; background:rgba(0,0,0,0.5); border:2px solid #fff; border-radius:50%; color:#fff; display:flex; justify-content:center; align-items:center; font-weight:bold; font-size:12px; active-background:rgba(255,215,0,0.5)}
-#btn-shoot {grid-column: span 3; width:100%; border-radius:10px; background:rgba(255,0,0,0.3); height:60px}
+#stick {position:absolute; top:50%; left:50%; width:60px; height:60px; background:rgba(255,255,255,0.4); border-radius:50%; transform:translate(-50%, -50%); pointer-events:none;}
+.action-grid {position:absolute; bottom:40px; right:40px; display:grid; grid-template-columns:repeat(2, 70px); gap:15px; pointer-events:auto;}
+.m-btn {width:70px; height:70px; background:rgba(0,0,0,0.5); border:2px solid #fff; border-radius:50%; color:#fff; display:flex; justify-content:center; align-items:center; font-weight:bold; font-size:12px;}
+#btn-shoot {grid-column: span 2; width:100%; border-radius:10px; background:rgba(255,0,0,0.3); height:60px}
 </style>
 </head>
 <body>
@@ -68,9 +66,6 @@ button{padding:10px 20px;font-size:20px;cursor:pointer;background:#ffd700;border
         <div class="m-btn" id="btn-run">CORRER</div>
         <div class="m-btn" id="btn-e">INTERAGIR</div>
         <div class="m-btn" id="btn-r">R</div>
-        <div class="m-btn" id="btn-1">1</div>
-        <div class="m-btn" id="btn-2">2</div>
-        <div class="m-btn" id="btn-3">3</div>
         <div class="m-btn" id="btn-t">CHAT</div>
     </div>
 </div>
@@ -95,10 +90,10 @@ button{padding:10px 20px;font-size:20px;cursor:pointer;background:#ffd700;border
         <button onclick="location.reload()" style="background:#555;color:#fff;pointer-events:auto;">REINICIAR</button>
     </div>
     <div id="inventory-ui">
-        <div id="slot-1" class="inv-slot">1 [MÃOS]</div>
-        <div id="slot-2" class="inv-slot">2 [FACA]</div>
-        <div id="slot-3" class="inv-slot">3 [ARMA]</div>
-        <div id="slot-boots" class="inv-slot">BOTAS<br>PARKOUR</div>
+        <div id="slot-1" class="inv-slot" onclick="selectSlot('NONE')">MÃOS</div>
+        <div id="slot-2" class="inv-slot" onclick="selectSlot('KNIFE')">FACA</div>
+        <div id="slot-3" class="inv-slot" onclick="selectSlot('GUN')">ARMA</div>
+        <div id="slot-boots" class="inv-slot">BOTAS</div>
     </div>
     <div id="prompt">Pressione [E] para interagir</div>
 </div>
@@ -111,7 +106,6 @@ button{padding:10px 20px;font-size:20px;cursor:pointer;background:#ffd700;border
 <script type="module">
 import * as THREE from 'three';
 
-// --- CONTROLE DE PLATAFORMA ---
 let isMobile = false;
 window.selectPlatform = (type) => {
     isMobile = (type === 'mobile');
@@ -119,10 +113,15 @@ window.selectPlatform = (type) => {
     document.getElementById('setup-screen').style.display = 'flex';
 };
 
+window.selectSlot = (type) => {
+    if(type === 'KNIFE' && !hasKnife) return;
+    if(type === 'GUN' && !hasGun) return;
+    if(equipAnimPhase === "IDLE") { nextEquip = type; equipAnimPhase = "DOWN"; }
+};
+
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x87CEEB);scene.fog=new THREE.Fog(0x87CEEB,10,150);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(window.innerWidth,window.innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.body.appendChild(renderer.domElement);
 
-// LÓGICA DE REDIMENSIONAMENTO (ANTI-ESTICAMENTO)
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -132,7 +131,6 @@ window.addEventListener('resize', () => {
 const grassTexture=new THREE.TextureLoader().load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');grassTexture.wrapS=grassTexture.wrapT=THREE.RepeatWrapping;grassTexture.repeat.set(100,100);
 const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);camera.rotation.order='YXZ';
 const sun=new THREE.DirectionalLight(0xffffff,1.2);sun.position.set(40,60,20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);scene.add(sun,new THREE.AmbientLight(0xffffff,0.4));
-
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(1000,1000),new THREE.MeshStandardMaterial({map:grassTexture}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 
 function createTree(x,z){const g=new THREE.Group(),t=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.4,3),new THREE.MeshStandardMaterial({color:0x4d2d18}));t.position.y=1.5;t.castShadow=true;g.add(t);const f=new THREE.Mesh(new THREE.DodecahedronGeometry(1.8),new THREE.MeshStandardMaterial({color:0x2d5a27}));f.position.y=4;f.castShadow=true;g.add(f);g.position.set(x,0,z);scene.add(g)}
@@ -221,48 +219,80 @@ const monTexPolitica=new THREE.TextureLoader().load('https://i.postimg.cc/4NvxyJ
 for(let i=0;i<15;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(2.5,3.5),new THREE.MeshBasicMaterial({map:monTexNormal,side:THREE.DoubleSide,transparent:true}));m.visible=false;m.stunnedUntil=0;scene.add(m);monsters.push(m)}
 
 let pName="",coinsCount=0,prizesLeft=10,gameState="SETUP",isClawDescending=false,caughtPrize=null,startTime=0,gameActive=false,velocityY=0,isGrounded=true,moveF=false,moveB=false,moveL=false,moveR=false,isRunning=false,yaw=0,pitch=0,clawOpen=1,nbSpeed=0.1,stamina=100,ammo=5,currentEquip="NONE",nextEquip="NONE",equipAnimPhase="IDLE", botsPaused = false;
-
-let podeVoar = false, isFlying = false, lastSpacePress = 0; 
-const clawKeys={left:false,right:false,up:false,down:false};
-let hasKnife=false, hasGun=false, hasBoots=false;
-let maquinaBloqueada = true, tempoCadeado = 30, segurandoR = false;
-let nbScale = 1;
+let podeVoar = false, isFlying = false, lastSpacePress = 0, clawKeys={left:false,right:false,up:false,down:false}, hasKnife=false, hasGun=false, hasBoots=false, maquinaBloqueada = true, tempoCadeado = 30, segurandoR = false, nbScale = 1;
 
 const chatInput = document.getElementById('game-chat');
 
-// --- LÓGICA MOBILE ---
-let joyX = 0, joyY = 0, joyActive = false;
-if(true){
-    const base = document.getElementById('joy-base');
-    const stick = document.getElementById('stick');
-    base.addEventListener('touchstart', e => { joyActive = true; });
-    base.addEventListener('touchmove', e => {
-        const rect = base.getBoundingClientRect();
-        const touch = e.touches[0];
-        const x = touch.clientX - (rect.left + rect.width/2);
-        const y = touch.clientY - (rect.top + rect.height/2);
-        const dist = Math.min(60, Math.sqrt(x*x+y*y));
-        const angle = Math.atan2(y, x);
-        joyX = (Math.cos(angle) * dist) / 60;
-        joyY = (Math.sin(angle) * dist) / 60;
-        stick.style.left = `calc(50% + ${Math.cos(angle)*dist}px)`;
-        stick.style.top = `calc(50% + ${Math.sin(angle)*dist}px)`;
-    });
-    base.addEventListener('touchend', () => { joyActive = false; joyX = 0; joyY = 0; stick.style.left = '50%'; stick.style.top = '50%'; });
+// --- LÓGICA MOBILE MELHORADA ---
+let joyX = 0, joyY = 0, joyActive = false, joyId = null;
+const base = document.getElementById('joy-base');
+const stick = document.getElementById('stick');
 
-    let lastX, lastY;
-    document.addEventListener('touchstart', e => { if(e.touches[0].clientX > window.innerWidth/2){ lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }});
-    document.addEventListener('touchmove', e => {
-        if(e.touches[0].clientX > window.innerWidth/2){
-            const dx = e.touches[0].clientX - lastX;
-            const dy = e.touches[0].clientY - lastY;
+base.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    joyId = touch.identifier;
+    joyActive = true;
+    updateJoy(touch);
+});
+
+base.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for(let i=0; i<e.changedTouches.length; i++){
+        if(e.changedTouches[i].identifier === joyId) updateJoy(e.changedTouches[i]);
+    }
+});
+
+base.addEventListener('touchend', e => {
+    for(let i=0; i<e.changedTouches.length; i++){
+        if(e.changedTouches[i].identifier === joyId){
+            joyActive = false; joyId = null; joyX = 0; joyY = 0;
+            stick.style.left = '50%'; stick.style.top = '50%';
+        }
+    }
+});
+
+function updateJoy(touch){
+    const rect = base.getBoundingClientRect();
+    const x = touch.clientX - (rect.left + rect.width/2);
+    const y = touch.clientY - (rect.top + rect.height/2);
+    const dist = Math.min(60, Math.sqrt(x*x+y*y));
+    const angle = Math.atan2(y, x);
+    joyX = (Math.cos(angle) * dist) / 60;
+    joyY = (Math.sin(angle) * dist) / 60;
+    stick.style.left = `calc(50% + ${Math.cos(angle)*dist}px)`;
+    stick.style.top = `calc(50% + ${Math.sin(angle)*dist}px)`;
+}
+
+// Câmera Mobile Independente do analógico
+let lookId = null, lastX, lastY;
+document.addEventListener('touchstart', e => {
+    const touch = e.changedTouches[0];
+    if(touch.clientX > window.innerWidth/2 && lookId === null){
+        lookId = touch.identifier;
+        lastX = touch.clientX; lastY = touch.clientY;
+    }
+});
+
+document.addEventListener('touchmove', e => {
+    for(let i=0; i<e.changedTouches.length; i++){
+        const touch = e.changedTouches[i];
+        if(touch.identifier === lookId){
+            const dx = touch.clientX - lastX;
+            const dy = touch.clientY - lastY;
             yaw -= dx * 0.005;
             pitch = Math.max(-1.5, Math.min(1.5, pitch - dy * 0.005));
             camera.rotation.set(pitch, yaw, 0, 'YXZ');
-            lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+            lastX = touch.clientX; lastY = touch.clientY;
         }
-    });
-}
+    }
+});
+
+document.addEventListener('touchend', e => {
+    for(let i=0; i<e.changedTouches.length; i++){
+        if(e.changedTouches[i].identifier === lookId) lookId = null;
+    }
+});
 
 const setupMBtn = (id, code) => {
     const btn = document.getElementById(id);
@@ -285,11 +315,9 @@ window.startGame=()=>{
     gameState="WALK"; if(!isMobile) document.body.requestPointerLock(); updateLeaderboard();
     document.getElementById('prizes-val').innerText=prizesLeft;
     updateEquipVisuals();
-    
     if(isMobile){
         setupMBtn('btn-jump', 'Space'); setupMBtn('btn-run', 'ShiftLeft'); setupMBtn('btn-e', 'KeyE');
-        setupMBtn('btn-r', 'KeyR'); setupMBtn('btn-1', 'Digit1'); setupMBtn('btn-2', 'Digit2');
-        setupMBtn('btn-3', 'Digit3'); document.getElementById('btn-shoot').onclick = shoot;
+        setupMBtn('btn-r', 'KeyR'); document.getElementById('btn-shoot').onclick = shoot;
         document.getElementById('btn-t').onclick = () => { handleKeyDown({code:'KeyT'}); };
     }
 };
@@ -358,9 +386,9 @@ const handleKeyDown = e => {
             }
         }
         if(equipAnimPhase==="IDLE"){
-            if(e.code==='Digit1') {nextEquip="NONE";equipAnimPhase="DOWN"}
-            if(e.code==='Digit2' && hasKnife) {nextEquip="KNIFE";equipAnimPhase="DOWN"}
-            if(e.code==='Digit3' && hasGun) {nextEquip="GUN";equipAnimPhase="DOWN"}
+            if(e.code==='Digit1') selectSlot('NONE');
+            if(e.code==='Digit2') selectSlot('KNIFE');
+            if(e.code==='Digit3') selectSlot('GUN');
         }
     }else if(gameState==="CLAW"){if(e.code==='ArrowLeft')clawKeys.left=true;if(e.code==='ArrowRight')clawKeys.right=true;if(e.code==='ArrowUp')clawKeys.up=true;if(e.code==='ArrowDown')clawKeys.down=true;if(e.code==='Space')startFishing();if(e.code==='Escape')exitMachine()}
 };
