@@ -106,74 +106,88 @@ window.startGame = () => {
     }
 };
 
-// --- NOVO SISTEMA DE ÁRVORES VARIADAS ---
+// --- MODIFICAÇÃO: SISTEMA DE ÁRVORES MAIS ALTAS, MAIS DENSAS E SÓLIDAS ---
+const treeTrunks = []; // Lista para guardar apenas os troncos (para colisão)
+
 function createTree(x, z) {
     const group = new THREE.Group();
     
-    // Sorteia um tipo de 1 a 3 para variação visual
+    // Sorteia um tipo e escala aleatória (agora base 1.5 para serem MAIS ALTAS)
     const type = Math.floor(Math.random() * 3) + 1;
-    const randomScale = 0.7 + Math.random() * 0.8; // Variação de tamanho real
+    const randomScale = 1.5 + Math.random() * 1.5; // Altura e robustez muito maior
 
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d2d18 });
     const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27 });
 
+    let trunkMesh; // Referência local para o tronco
+
     if (type === 1) {
-        // Árvore Padrão
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 3), trunkMat);
-        trunk.position.y = 1.5;
-        const leaves = new THREE.Mesh(new THREE.ConeGeometry(2, 4, 8), leafMat);
-        leaves.position.y = 4.5;
-        group.add(trunk, leaves);
+        // Árvore Padrão (mas enorme)
+        trunkMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 6), trunkMat); // Dobro da altura anterior
+        trunkMesh.position.y = 3;
+        const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 8, 8), leafMat); // Folhas proporcionais
+        leaves.position.y = 9;
+        group.add(trunkMesh, leaves);
     } 
     else if (type === 2) {
-        // Árvore Estilo Pinheiro (Alta e em camadas)
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 4), trunkMat);
-        trunk.position.y = 2;
-        for(let i = 0; i < 3; i++) {
-            const layer = new THREE.Mesh(new THREE.ConeGeometry(1.6 - (i * 0.4), 2, 8), leafMat);
-            layer.position.y = 3 + (i * 1.3);
+        // Pinheiro Gigante
+        trunkMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 8), trunkMat); // Muito alto
+        trunkMesh.position.y = 4;
+        for(let i = 0; i < 4; i++) { // Mais camadas
+            const layer = new THREE.Mesh(new THREE.ConeGeometry(2.5 - (i * 0.5), 3, 8), leafMat);
+            layer.position.y = 5 + (i * 1.8);
             group.add(layer);
         }
-        group.add(trunk);
+        group.add(trunkMesh);
     } 
     else {
-        // Árvore com Galhos Laterais
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 3.5), trunkMat);
-        trunk.position.y = 1.75;
+        // Árvore Robusta com Galhos
+        trunkMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 7), trunkMat); // Tronco grosso e alto
+        trunkMesh.position.y = 3.5;
         
-        const branch1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5), trunkMat);
-        branch1.position.set(0.5, 2.8, 0);
+        const branch1 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 2.5), trunkMat);
+        branch1.position.set(1.0, 4.5, 0);
         branch1.rotation.z = Math.PI / 3;
         
-        const branch2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5), trunkMat);
-        branch2.position.set(-0.5, 3.2, 0);
+        const branch2 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 2.5), trunkMat);
+        branch2.position.set(-1.0, 5.0, 0);
         branch2.rotation.z = -Math.PI / 3;
 
-        const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(2), leafMat);
-        crown.position.y = 4.8;
+        const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(3.5), leafMat);
+        crown.position.y = 9;
         
-        group.add(trunk, branch1, branch2, crown);
+        group.add(trunkMesh, branch1, branch2, crown);
     }
 
     group.scale.set(randomScale, randomScale, randomScale);
     group.position.set(x, 0, z);
     
-    // Garante que todas as partes da árvore projetem e recebam sombras
+    // Configura sombras e guarda a referência do tronco para colisão
     group.traverse(child => {
         if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
+            // Se for o tronco principal, adicionamos à lista de colisão
+            if (child === trunkMesh) {
+                treeTrunks.push(child);
+            }
         }
     });
 
     scene.add(group);
 }
 
-// Aumentado para 60 árvores para uma floresta mais densa e bonita
-for (let i = 0; i < 60; i++) {
-    let rx = Math.random() * 180 - 90, rz = Math.random() * 180 - 90;
-    if (Math.abs(rx) > 15 || Math.abs(rz) > 15) createTree(rx, rz);
+// Aumentado drasticamente para 200 árvores para uma floresta MUITO mais densa
+for (let i = 0; i < 200; i++) {
+    let rx = Math.random() * 250 - 125; // Área maior de spawn
+    let rz = Math.random() * 250 - 125;
+    // Evita spawn dentro da área central do jogo
+    if (Math.abs(rx) > 20 || Math.abs(rz) > 20) createTree(rx, rz);
 }
+
+// Raycaster para detecção de colisão com árvores
+const collisionRaycaster = new THREE.Raycaster();
+const collisionDistance = 1.2; // Distância mínima do tronco (grossura do tronco + margem)
 
 const coins = [];
 for (let i = 0; i < 10; i++) {
@@ -521,11 +535,59 @@ function animate() {
 
         if (document.pointerLockElement || isMobile) {
             const baseS = isFlying ? 0.6 : (isRunning && stamina > 0 ? 0.32 : 0.18);
-            const d = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion); if (!isFlying) d.y = 0; d.normalize();
-            const s = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), d);
-            if (moveF) camera.position.addScaledVector(d, baseS); if (moveB) camera.position.addScaledVector(d, -baseS);
-            if (moveL) camera.position.addScaledVector(s, baseS); if (moveR) camera.position.addScaledVector(s, -baseS);
-            if (joyActive) { camera.position.addScaledVector(d, -joyY * baseS); camera.position.addScaledVector(s, -joyX * baseS); }
+            
+            // --- MODIFICAÇÃO: CÁLCULO DE MOVIMENTO COM COLISÃO SÓLIDA ---
+            const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            if (!isFlying) cameraDirection.y = 0; // Movimento no chão ignorando inclinação vertical
+            cameraDirection.normalize();
+            
+            const sideDirection = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), cameraDirection);
+            sideDirection.normalize();
+
+            // Vetor que acumula a intenção de movimento do jogador nesta frame
+            const moveIntent = new THREE.Vector3(0, 0, 0);
+
+            if (moveF) moveIntent.addScaledVector(cameraDirection, baseS);
+            if (moveB) moveIntent.addScaledVector(cameraDirection, -baseS);
+            if (moveL) moveIntent.addScaledVector(sideDirection, baseS);
+            if (moveR) moveIntent.addScaledVector(sideDirection, -baseS);
+            if (joyActive) {
+                moveIntent.addScaledVector(cameraDirection, -joyY * baseS);
+                moveIntent.addScaledVector(sideDirection, -joyX * baseS);
+            }
+
+            // Se o jogador está tentando se mover...
+            if (moveIntent.length() > 0) {
+                // Se estiver voando, ignoramos a colisão com troncos
+                if (isFlying) {
+                    camera.position.add(moveIntent);
+                } else {
+                    // SISTEMA DE COLISÃO NO CHÃO
+                    // 1. Clonamos a posição atual
+                    const currentPos = camera.position.clone();
+                    currentPos.y = 1.0; // Definimos a altura do tronco para o cálculo
+
+                    // 2. Apontamos o Raycaster para a direção que queremos ir
+                    const rayDir = moveIntent.clone().normalize();
+                    collisionRaycaster.set(currentPos, rayDir);
+
+                    // 3. Verificamos se há troncos sólidos à frente
+                    const intersects = collisionRaycaster.intersectObjects(treeTrunks);
+
+                    let blocked = false;
+                    if (intersects.length > 0) {
+                        // Se a distância do impacto for menor que a nossa margem, estamos bloqueados
+                        if (intersects[0].distance < collisionDistance) {
+                            blocked = true;
+                        }
+                    }
+
+                    // 4. Se não estiver bloqueado, aplicamos o movimento
+                    if (!blocked) {
+                        camera.position.add(moveIntent);
+                    }
+                }
+            }
 
             let nearObj = false;
             if (maquinaBloqueada && camera.position.distanceTo(new THREE.Vector3(0, 1.2, -7.4)) < 3) { document.getElementById('prompt').innerText = "Segure [R] para desbloquear"; nearObj = true; }
