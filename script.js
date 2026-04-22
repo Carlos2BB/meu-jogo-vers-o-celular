@@ -106,18 +106,71 @@ window.startGame = () => {
     }
 };
 
-// --- CRIAÇÃO DE OBJETOS ---
+// --- NOVO SISTEMA DE ÁRVORES VARIADAS ---
 function createTree(x, z) {
-    const g = new THREE.Group();
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 3), new THREE.MeshStandardMaterial({ color: 0x4d2d18 }));
-    t.position.y = 1.5; t.castShadow = true; g.add(t);
-    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(1.8), new THREE.MeshStandardMaterial({ color: 0x2d5a27 }));
-    f.position.y = 4; f.castShadow = true; g.add(f);
-    g.position.set(x, 0, z);
-    scene.add(g);
+    const group = new THREE.Group();
+    
+    // Sorteia um tipo de 1 a 3 para variação visual
+    const type = Math.floor(Math.random() * 3) + 1;
+    const randomScale = 0.7 + Math.random() * 0.8; // Variação de tamanho real
+
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4d2d18 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27 });
+
+    if (type === 1) {
+        // Árvore Padrão
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 3), trunkMat);
+        trunk.position.y = 1.5;
+        const leaves = new THREE.Mesh(new THREE.ConeGeometry(2, 4, 8), leafMat);
+        leaves.position.y = 4.5;
+        group.add(trunk, leaves);
+    } 
+    else if (type === 2) {
+        // Árvore Estilo Pinheiro (Alta e em camadas)
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 4), trunkMat);
+        trunk.position.y = 2;
+        for(let i = 0; i < 3; i++) {
+            const layer = new THREE.Mesh(new THREE.ConeGeometry(1.6 - (i * 0.4), 2, 8), leafMat);
+            layer.position.y = 3 + (i * 1.3);
+            group.add(layer);
+        }
+        group.add(trunk);
+    } 
+    else {
+        // Árvore com Galhos Laterais
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 3.5), trunkMat);
+        trunk.position.y = 1.75;
+        
+        const branch1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5), trunkMat);
+        branch1.position.set(0.5, 2.8, 0);
+        branch1.rotation.z = Math.PI / 3;
+        
+        const branch2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5), trunkMat);
+        branch2.position.set(-0.5, 3.2, 0);
+        branch2.rotation.z = -Math.PI / 3;
+
+        const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(2), leafMat);
+        crown.position.y = 4.8;
+        
+        group.add(trunk, branch1, branch2, crown);
+    }
+
+    group.scale.set(randomScale, randomScale, randomScale);
+    group.position.set(x, 0, z);
+    
+    // Garante que todas as partes da árvore projetem e recebam sombras
+    group.traverse(child => {
+        if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+        }
+    });
+
+    scene.add(group);
 }
 
-for (let i = 0; i < 40; i++) {
+// Aumentado para 60 árvores para uma floresta mais densa e bonita
+for (let i = 0; i < 60; i++) {
     let rx = Math.random() * 180 - 90, rz = Math.random() * 180 - 90;
     if (Math.abs(rx) > 15 || Math.abs(rz) > 15) createTree(rx, rz);
 }
@@ -381,7 +434,7 @@ function startFishing() {
             if (clawSystem.position.y >= 5) stg = "DONE"
         } else {
             if (caughtPrize) { caughtPrize.visible = false; prizesLeft--; document.getElementById('prizes-val').innerText = Math.max(0, prizesLeft); caughtPrize = null; if (prizesLeft <= 0) endGame() }
-            coinsCount--; document.getElementById('coin-val').innerText = coinsCount; clearInterval(i); isClawDescending = false; if (coinsCount <= 0) exitMachine()
+            if (coinsCount > 0) coinsCount--; document.getElementById('coin-val').innerText = coinsCount; clearInterval(i); isClawDescending = false; if (coinsCount <= 0) exitMachine()
         }
     }, 20)
 }
