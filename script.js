@@ -20,16 +20,15 @@ const stick = document.getElementById('stick');
 
 // Configuração Three.js
 const scene = new THREE.Scene();
-// --- AMBIENTE AMAZÔNICO ---
-const corFloresta = 0x051a05;
-scene.background = new THREE.Color(corFloresta);
-scene.fog = new THREE.Fog(corFloresta, 1, 60); // Neblina densa e próxima
+// --- RESTAURADO: Céu Azul Original ---
+scene.background = new THREE.Color(0x87CEEB);
+// --- REMOVIDO: scene.fog (Neblina) ---
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-document.body.appendChild(renderer.domElement);
+document.body.appendChild(renderer.shadowMap.element || renderer.domElement); // Correção leve para garantir compatibilidade
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
@@ -39,14 +38,16 @@ const grassTexture = new THREE.TextureLoader().load('https://threejs.org/example
 grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
 grassTexture.repeat.set(100, 100);
 
-// Luz filtrada pela selva
-const sun = new THREE.DirectionalLight(0x446644, 1.2);
-sun.position.set(40, 80, 20);
+// --- RESTAURADO: Luz Branca Original ---
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(40, 60, 20);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
-scene.add(sun, new THREE.AmbientLight(0x112211, 0.5));
+// --- RESTAURADO: Luz Ambiente Branca Original ---
+scene.add(sun, new THREE.AmbientLight(0xffffff, 0.4));
 
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ map: grassTexture, color: 0x113311 }));
+// --- RESTAURADO: Cor da Grama Original ---
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ map: grassTexture })); 
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
@@ -109,29 +110,32 @@ window.startGame = () => {
     }
 };
 
-// --- CRIAÇÃO DA FLORESTA AMAZÔNICA ---
-function createAmazonTree(x, z) {
+// --- ADIÇÃO DO SISTEMA DE ÁRVORES GRANDES (MANTIDO) ---
+function createTree(x, z) {
     const g = new THREE.Group();
-    // Árvores enormes (escala aumentada)
-    const altura = 20 + Math.random() * 25;
-    const largura = 1.5 + Math.random() * 2;
+    // Mantendo a escala grande das árvores
+    const height = 20 + Math.random() * 25;
+    const radius = 1.2 + Math.random() * 1.5;
 
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(largura * 0.7, largura, altura, 8), new THREE.MeshStandardMaterial({ color: 0x2b1d0e }));
-    t.position.y = altura / 2; t.castShadow = true; g.add(t);
+    // Tronco (Cor original restaurada implicitamente pela luz branca)
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.3, height, 8), new THREE.MeshStandardMaterial({ color: 0x4d2d18 }));
+    t.position.y = height / 2; t.castShadow = true; g.add(t);
 
-    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(altura * 0.6, 0), new THREE.MeshStandardMaterial({ color: 0x0a290a }));
-    f.position.y = altura; f.castShadow = true; g.add(f);
+    // Copa (Cor original restaurada)
+    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(height * 0.6, 0), new THREE.MeshStandardMaterial({ color: 0x2d5a27 }));
+    f.position.y = height; f.castShadow = true; g.add(f);
     
     g.position.set(x, 0, z);
     scene.add(g);
 }
 
-// Floresta densa e grande
-for (let i = 0; i < 150; i++) {
+// Mantendo a floresta densa e grande ao redor
+for (let i = 0; i < 120; i++) {
     let rx = Math.random() * 400 - 200, rz = Math.random() * 400 - 200;
     // Evita árvores em cima da máquina
-    if (Math.abs(rx) > 10 || (rz > -5 || rz < -15)) createAmazonTree(rx, rz);
+    if (Math.abs(rx) > 10 || (rz > -5 || rz < -15)) createTree(rx, rz);
 }
+// -----------------------------------------------------
 
 const coins = [];
 for (let i = 0; i < 10; i++) {
