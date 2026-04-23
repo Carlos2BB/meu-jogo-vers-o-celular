@@ -59,16 +59,17 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// --- FUNÇÕES DE AMBIENTE (NOVO: ARBUSTOS E PEDRAS) ---
+// --- FUNÇÕES DE AMBIENTE (ATUALIZADO: MENOS OBJETOS, MAIS DETALHE) ---
 
 function createBush(x, z) {
     const bushGroup = new THREE.Group();
-    const size = 0.5 + Math.random() * 0.8;
-    const mat = new THREE.MeshStandardMaterial({ color: 0x1a4a15 });
+    const size = 0.4 + Math.random() * 0.5; // Arbustos ligeiramente menores
+    const mat = new THREE.MeshStandardMaterial({ color: 0x1a4a15, roughness: 0.9 }); // Mais opaco
     
-    for(let i = 0; i < 3; i++) {
-        const sphere = new THREE.Mesh(new THREE.DodecahedronGeometry(size), mat);
-        sphere.position.set(Math.random()*0.5, size/2, Math.random()*0.5);
+    // Criando um arbusto mais denso e bonito
+    for(let i = 0; i < 5; i++) {
+        const sphere = new THREE.Mesh(new THREE.DodecahedronGeometry(size, 1), mat);
+        sphere.position.set((Math.random()-0.5)*0.6, size/1.5 + (Math.random()*0.2), (Math.random()-0.5)*0.6);
         sphere.castShadow = true;
         bushGroup.add(sphere);
     }
@@ -77,22 +78,22 @@ function createBush(x, z) {
 }
 
 function createRock(x, z) {
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x808080 });
-    const rockGeo = new THREE.DodecahedronGeometry(0.4 + Math.random() * 1.2, 0);
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x707070, roughness: 0.8 }); // Cinza mais suave
+    const rockGeo = new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.8, 0); // Pedras menores
     const rock = new THREE.Mesh(rockGeo, rockMat);
-    rock.scale.y = 0.5 + Math.random();
-    rock.position.set(x, rock.scale.y * 0.2, z);
+    rock.scale.y = 0.4 + Math.random() * 0.6;
+    rock.position.set(x, rock.scale.y * 0.15, z);
     rock.rotation.set(Math.random(), Math.random(), Math.random());
     rock.castShadow = true;
     scene.add(rock);
 }
 
-// Gerando os novos elementos
-for(let i = 0; i < 60; i++) {
-    createBush(Math.random() * 300 - 150, Math.random() * 300 - 150);
+// Gerando MENOS elementos para um visual mais limpo
+for(let i = 0; i < 25; i++) { // Reduzido de 60 para 25
+    createBush(Math.random() * 250 - 125, Math.random() * 250 - 125);
 }
-for(let i = 0; i < 40; i++) {
-    createRock(Math.random() * 300 - 150, Math.random() * 300 - 150);
+for(let i = 0; i < 15; i++) { // Reduzido de 40 para 15
+    createRock(Math.random() * 250 - 125, Math.random() * 250 - 125);
 }
 
 // --- FUNÇÕES DE INTERFACE ---
@@ -155,22 +156,62 @@ window.startGame = () => {
     }
 };
 
-// --- CRIAÇÃO DE OBJETOS ---
+// --- CRIAÇÃO DE OBJETOS (ATUALIZADO: ÁRVORES COM GALHOS) ---
 function createTree(x, z) {
     const g = new THREE.Group();
-    const height = 20 + Math.random() * 25;
-    const radius = 1.2 + Math.random() * 1.5;
+    const trunkHeight = 15 + Math.random() * 15; // Altura do tronco reduzida ligeiramente
+    const trunkRadius = 0.8 + Math.random() * 0.7;
+    const trunkColor = 0x5d3d28;
 
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.3, height, 8), new THREE.MeshStandardMaterial({ color: 0x4d2d18 }));
-    t.position.y = height / 2; t.castShadow = true; g.add(t);
+    // Tronco principal
+    const tMat = new THREE.MeshStandardMaterial({ color: trunkColor, roughness: 0.9 });
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(trunkRadius * 0.8, trunkRadius, trunkHeight, 10), tMat);
+    t.position.y = trunkHeight / 2; t.castShadow = true; g.add(t);
 
-    const fMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27 });
-    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(height * 0.6, 0), fMat);
-    f.position.y = height; f.castShadow = true; g.add(f);
+    // Folhagem principal (uma dodecaedro mais suave)
+    const fColor = 0x2d5a27;
+    const fMat = new THREE.MeshStandardMaterial({ color: fColor, roughness: 0.8 });
+    const foliageSize = trunkHeight * 0.5;
+    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(foliageSize, 1), fMat);
+    f.position.y = trunkHeight + foliageSize * 0.4; f.castShadow = true; g.add(f);
+
+    // --- ADICIONANDO GALHOS DETALHADOS ---
+    const numGalhos = 3 + Math.floor(Math.random() * 3);
+    for(let i = 0; i < numGalhos; i++) {
+        const angle = (i / numGalhos) * Math.PI * 2 + Math.random();
+        const branchHeight = trunkHeight * 0.4 + Math.random() * trunkHeight * 0.4;
+        const branchLength = trunkRadius * 3 + Math.random() * trunkRadius * 2;
+        const branchRadius = trunkRadius * 0.3;
+
+        const branchGroup = new THREE.Group();
+
+        // O próprio galho
+        const bGeo = new THREE.CylinderGeometry(branchRadius*0.7, branchRadius, branchLength, 8);
+        const b = new THREE.Mesh(bGeo, tMat);
+        b.rotation.z = Math.PI / 2; // Deita o cilindro
+        b.position.x = branchLength / 2;
+        b.castShadow = true;
+        branchGroup.add(b);
+
+        // Pequena folhagem na ponta do galho
+        const fbSize = branchLength * 0.4;
+        const fbMat = new THREE.MeshStandardMaterial({ color: fColor, roughness: 0.8 });
+        const fb = new THREE.Mesh(new THREE.DodecahedronGeometry(fbSize, 0), fbMat);
+        fb.position.x = branchLength;
+        fb.castShadow = true;
+        branchGroup.add(fb);
+
+        // Posiciona e rotaciona o grupo do galho no tronco
+        branchGroup.position.set(Math.cos(angle)*trunkRadius*0.8, branchHeight, Math.sin(angle)*trunkRadius*0.8);
+        branchGroup.rotation.y = angle;
+        branchGroup.rotation.z = Math.PI / 4 + (Math.random()-0.5)*0.2; // Inclina para cima
+
+        g.add(branchGroup);
+    }
     
     g.position.set(x, 0, z);
     scene.add(g);
-    listaArvores.push({ group: g, leaf: f });
+    listaArvores.push({ group: g, leaf: f }); // Nota: Apenas a folhagem principal muda de cor nas estações
 }
 
 for (let i = 0; i < 50; i++) {
@@ -523,7 +564,7 @@ function animate() {
         let curT = Date.now() - startTime;
         document.getElementById('timer-val').innerText = (curT / 1000).toFixed(1);
 
-        // --- SISTEMA DE BIOMAS (NOVO) ---
+        // --- SISTEMA DE BIOMAS ---
         // Se estiver longe (X ou Z > 100), vira bioma de DESERTO
         if(Math.abs(camera.position.x) > 100 || Math.abs(camera.position.z) > 100) {
             groundMat.color.lerp(new THREE.Color(0xedc9af), 0.01); // Areia
