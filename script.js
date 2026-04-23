@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// Variáveiss de Estado e Globais
+// Variáveis de Estado e Globais
 let isMobile = false;
 let pName = "", coinsCount = 0, prizesLeft = 10, gameState = "SETUP";
 let isClawDescending = false, caughtPrize = null, startTime = 0, gameActive = false;
@@ -17,7 +17,7 @@ let clawKeys = { left: false, right: false, up: false, down: false };
 let estacaoAtual = "VERAO"; 
 const estacoes = ["VERAO", "PRIMAVERA", "OUTONO", "INVERNO"];
 let tempoUltimaEstacao = 0;
-const estacaoDuracao = 30000; // 30 segundos por estação
+const estacaoDuracao = 30000; 
 const folhasParticulas = [];
 const neveParticulas = [];
 const floresNoChao = [];
@@ -59,15 +59,12 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
+// --- FUNÇÕES DE INTERFACE ---
 window.selectPlatform = (type) => {
     isMobile = (type === 'mobile');
     document.getElementById('platform-screen').style.display = 'none';
     document.getElementById('setup-screen').style.display = 'flex';
-    
-    // Se for PC, solicita o bloqueio do mouse logo no primeiro clique
-    if (!isMobile) {
-        document.body.requestPointerLock();
-    }
+    if (!isMobile) document.body.requestPointerLock();
 };
 
 window.selectSlot = (type) => {
@@ -106,13 +103,12 @@ window.startGame = () => {
     createAirdrop(items[1].type, items[1].col, 120000);
     createAirdrop(items[2].type, items[2].col, 180000);
 
-    // Dentro da função window.startGame, quase no final:
-gameState = "WALK";
-if (!isMobile) {
-    document.body.requestPointerLock();
-}
-updateLeaderboard();
-    
+    gameState = "WALK";
+    if (!isMobile) document.body.requestPointerLock();
+    updateLeaderboard();
+    document.getElementById('prizes-val').innerText = prizesLeft;
+    updateEquipVisuals();
+
     if (isMobile) {
         setupMBtn('btn-jump', 'Space');
         setupMBtn('btn-run', 'ShiftLeft');
@@ -123,7 +119,7 @@ updateLeaderboard();
     }
 };
 
-// --- CRIAÇÃO DE OBJETOS (ÁRVORES E CLIMA) ---
+// --- CRIAÇÃO DE OBJETOS ---
 function createTree(x, z) {
     const g = new THREE.Group();
     const height = 20 + Math.random() * 25;
@@ -141,7 +137,6 @@ function createTree(x, z) {
     listaArvores.push({ group: g, leaf: f });
 }
 
-// Criação de Partículas de Outono
 for (let i = 0; i < 50; i++) {
     const folha = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xd2691e, side: THREE.DoubleSide }));
     folha.visible = false;
@@ -149,7 +144,6 @@ for (let i = 0; i < 50; i++) {
     folhasParticulas.push(folha);
 }
 
-// Criação de Partículas de Neve
 for (let i = 0; i < 150; i++) {
     const floco = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({ color: 0xffffff }));
     floco.visible = false;
@@ -157,7 +151,6 @@ for (let i = 0; i < 150; i++) {
     neveParticulas.push(floco);
 }
 
-// Criação de Flores (Primavera)
 const coresFlores = [0xff69b4, 0xff0000, 0xffff00, 0xffffff];
 for (let i = 0; i < 100; i++) {
     const flor = new THREE.Mesh(new THREE.CircleGeometry(0.15, 5), new THREE.MeshBasicMaterial({ color: coresFlores[Math.floor(Math.random()*coresFlores.length)] }));
@@ -180,7 +173,6 @@ for (let i = 0; i < 10; i++) {
     scene.add(c); coins.push(c);
 }
 
-// LÓGICA DE ATUALIZAÇÃO DAS ESTAÇÕES
 function atualizarEstacoes() {
     const agora = Date.now();
     if (agora - tempoUltimaEstacao > estacaoDuracao) {
@@ -192,7 +184,6 @@ function atualizarEstacoes() {
 }
 
 function aplicarEfeitosEstacao() {
-    // Resetar visibilidade
     folhasParticulas.forEach(f => f.visible = (estacaoAtual === "OUTONO"));
     neveParticulas.forEach(n => n.visible = (estacaoAtual === "INVERNO"));
     floresNoChao.forEach(fl => {
@@ -200,7 +191,6 @@ function aplicarEfeitosEstacao() {
         if (fl.visible) fl.position.set(Math.random() * 100 - 50, 0.01, Math.random() * 100 - 50);
     });
 
-    // Mudar chão e árvores
     if (estacaoAtual === "VERAO") {
         groundMat.color.set(0xffffff);
         listaArvores.forEach(a => a.leaf.material.color.set(0x2d5a27));
@@ -210,19 +200,15 @@ function aplicarEfeitosEstacao() {
     } else if (estacaoAtual === "OUTONO") {
         groundMat.color.set(0xd2b48c);
         listaArvores.forEach(a => a.leaf.material.color.set(Math.random() > 0.5 ? 0xffa500 : 0xffff00));
-        folhasParticulas.forEach(f => {
-            f.position.set(Math.random() * 100 - 50, 10 + Math.random() * 20, Math.random() * 100 - 50);
-        });
+        folhasParticulas.forEach(f => { f.position.set(Math.random() * 100 - 50, 10 + Math.random() * 20, Math.random() * 100 - 50); });
     } else if (estacaoAtual === "INVERNO") {
         groundMat.color.set(0xffffff);
         listaArvores.forEach(a => a.leaf.material.color.set(0xeeeeee));
-        neveParticulas.forEach(n => {
-            n.position.set(Math.random() * 60 - 30 + camera.position.x, 20 + Math.random() * 10, Math.random() * 60 - 30 + camera.position.z);
-        });
+        neveParticulas.forEach(n => { n.position.set(Math.random() * 60 - 30 + camera.position.x, 20 + Math.random() * 10, Math.random() * 60 - 30 + camera.position.z); });
     }
 }
 
-// Plataformas e Chest (Código Original Mantido)
+// Plataformas e Chest
 const platforms = [], obstacles = [];
 const platMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
 for (let i = 0; i < 15; i++) {
@@ -247,7 +233,7 @@ lock.position.set(0, 0.5, 0.4); chestGroup.add(lock);
 chestGroup.position.set(platforms[14].position.x, platforms[14].position.y + 0.25, platforms[14].position.z);
 scene.add(chestGroup);
 
-// Armas e Mãos (Código Original Mantido)
+// Armas e Mãos
 const handGroup = new THREE.Group();
 const handMesh = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.6), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
 handMesh.castShadow = true; handGroup.add(handMesh);
@@ -272,7 +258,7 @@ gunGroup.position.set(0, 0, -0.4); handGroup.add(gunGroup);
 const handPosIdle = new THREE.Vector3(0.5, -0.5, -0.8), handPosHip = new THREE.Vector3(0.5, -1.8, -0.5);
 handGroup.position.copy(handPosIdle); camera.add(handGroup); scene.add(camera);
 
-// Máquina de Garra e Bloqueio (Código Original Mantido)
+// Máquina de Garra e Bloqueio
 const machine = new THREE.Group();
 const mBase = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.5, 3.5), new THREE.MeshStandardMaterial({ color: 0xaa0000, metalness: 0.5 }));
 mBase.castShadow = true; machine.add(mBase);
@@ -311,7 +297,7 @@ for (let i = 0; i < 3; i++) {
 }
 clawSystem.add(cable, clawHead); clawSystem.position.set(0, 5, 0); machine.add(clawSystem);
 
-// Airdrops e Nextbots (Código Original Mantido)
+// Airdrops e Nextbots
 const airdrops = [];
 function createAirdrop(item, color, time) {
     const group = new THREE.Group();
@@ -336,7 +322,7 @@ for (let i = 0; i < 15; i++) {
     m.visible = false; m.stunnedUntil = 0; scene.add(m); monsters.push(m);
 }
 
-// --- SISTEMA DE INPUTS (TOUCH E TECLADO) ---
+// --- SISTEMA DE INPUTS ---
 base.addEventListener('touchstart', e => { e.preventDefault(); const t = e.changedTouches[0]; joyId = t.identifier; joyActive = true; updateJoy(t); });
 base.addEventListener('touchmove', e => { e.preventDefault(); for (let i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === joyId) updateJoy(e.changedTouches[i]); });
 base.addEventListener('touchend', e => { for (let i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === joyId) { joyActive = false; joyId = null; joyX = 0; joyY = 0; stick.style.left = '50%'; stick.style.top = '50%'; } });
@@ -360,7 +346,7 @@ const setupMBtn = (id, code) => {
     btn.addEventListener('touchend', (e) => { e.preventDefault(); handleKeyUp({ code: code }); });
 };
 
-// --- LÓGICA DE COMBATE E CHAT (Original) ---
+// --- LÓGICA DE COMBATE E CHAT ---
 function shoot() {
     if (currentEquip !== "GUN" || ammo <= 0 || gameState !== "WALK" || (!document.pointerLockElement && !isMobile)) return;
     ammo--; document.getElementById('ammo-val').innerText = ammo;
@@ -451,15 +437,12 @@ function updateEquipVisuals() {
 }
 
 function desbloquearMaquina() { maquinaBloqueada = false; sistemaBloqueio.visible = false; segurandoR = false; document.getElementById('timer-lock').style.display = 'none'; }
+
 function exitMachine() { 
     gameState = "WALK"; 
     document.getElementById('game-info').style.display = 'none'; 
     camera.position.set(0, 1.7, -6);
-    
-    // Tenta prender o mouse logo ao sair da máquina
-    if (!isMobile) {
-        document.body.requestPointerLock();
-    }
+    if (!isMobile) document.body.requestPointerLock();
 }
 
 function updateLeaderboard() { const s = JSON.parse(localStorage.getItem('arcadeScores') || "[]"); document.getElementById('score-list').innerHTML = s.sort((a, b) => a.time - b.time).slice(0, 5).map(x => `<div>${x.name}: ${x.time}s</div>`).join('') }
@@ -504,7 +487,6 @@ function animate() {
         let curT = Date.now() - startTime;
         document.getElementById('timer-val').innerText = (curT / 1000).toFixed(1);
 
-        // Animação de Folhas (Outono)
         if (estacaoAtual === "OUTONO") {
             folhasParticulas.forEach(f => {
                 f.position.y -= 0.05;
@@ -513,7 +495,6 @@ function animate() {
             });
         }
 
-        // Animação de Neve (Inverno)
         if (estacaoAtual === "INVERNO") {
             neveParticulas.forEach(n => {
                 n.position.y -= 0.1;
@@ -609,21 +590,15 @@ function animate() {
 }
 animate();
 
-// Listener de redimensionamento
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    // Detecta o clique na tela para prender o mouse de volta após um ESC
+});
+
+// Correção para o mouse voltar após ESC ou clique na tela
 renderer.domElement.addEventListener('click', () => {
     if (gameActive && gameState === "WALK" && !isMobile) {
         document.body.requestPointerLock();
     }
-    // Esta função garante que o mouse volte a funcionar se você clicar na tela
-document.addEventListener('click', () => {
-    if (gameActive && gameState === "WALK" && !isMobile) {
-        document.body.requestPointerLock();
-    }
 });
-    });
-    });
