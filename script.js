@@ -13,6 +13,16 @@ let hasKnife = false, hasGun = false, hasBoots = false;
 let maquinaBloqueada = true, tempoCadeado = 30, segurandoR = false, nbScale = 1;
 let clawKeys = { left: false, right: false, up: false, down: false };
 
+// --- VARIÁVEIS DAS ESTAÇÕES ---
+let estacaoAtual = "VERAO"; 
+const estacoes = ["VERAO", "PRIMAVERA", "OUTONO", "INVERNO"];
+let tempoUltimaEstacao = 0;
+const estacaoDuracao = 30000; // 30 segundos por estação
+const folhasParticulas = [];
+const neveParticulas = [];
+const floresNoChao = [];
+const listaArvores = [];
+
 const chatInput = document.getElementById('game-chat');
 let joyX = 0, joyY = 0, joyActive = false, joyId = null;
 const base = document.getElementById('joy-base');
@@ -43,7 +53,8 @@ sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun, new THREE.AmbientLight(0xffffff, 0.4));
 
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ map: grassTexture }));
+const groundMat = new THREE.MeshStandardMaterial({ map: grassTexture });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), groundMat);
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
@@ -74,6 +85,7 @@ window.startGame = () => {
     
     camera.position.set(0, 1.7, -6);
     startTime = Date.now();
+    tempoUltimaEstacao = Date.now();
     gameActive = true;
     
     prizesInside.forEach((p, i) => { p.visible = i < prizesLeft });
@@ -106,7 +118,7 @@ window.startGame = () => {
     }
 };
 
-// --- CRIAÇÃO DE OBJETOS (ÁRVORES ATUALIZADAS) ---
+// --- CRIAÇÃO DE OBJETOS (ÁRVORES E CLIMA) ---
 function createTree(x, z) {
     const g = new THREE.Group();
     const height = 20 + Math.random() * 25;
@@ -115,11 +127,39 @@ function createTree(x, z) {
     const t = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.3, height, 8), new THREE.MeshStandardMaterial({ color: 0x4d2d18 }));
     t.position.y = height / 2; t.castShadow = true; g.add(t);
 
-    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(height * 0.6, 0), new THREE.MeshStandardMaterial({ color: 0x2d5a27 }));
+    const fMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27 });
+    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(height * 0.6, 0), fMat);
     f.position.y = height; f.castShadow = true; g.add(f);
     
     g.position.set(x, 0, z);
     scene.add(g);
+    listaArvores.push({ group: g, leaf: f });
+}
+
+// Criação de Partículas de Outono
+for (let i = 0; i < 50; i++) {
+    const folha = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xd2691e, side: THREE.DoubleSide }));
+    folha.visible = false;
+    scene.add(folha);
+    folhasParticulas.push(folha);
+}
+
+// Criação de Partículas de Neve
+for (let i = 0; i < 150; i++) {
+    const floco = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    floco.visible = false;
+    scene.add(floco);
+    neveParticulas.push(floco);
+}
+
+// Criação de Flores (Primavera)
+const coresFlores = [0xff69b4, 0xff0000, 0xffff00, 0xffffff];
+for (let i = 0; i < 100; i++) {
+    const flor = new THREE.Mesh(new THREE.CircleGeometry(0.15, 5), new THREE.MeshBasicMaterial({ color: coresFlores[Math.floor(Math.random()*coresFlores.length)] }));
+    flor.rotation.x = -Math.PI / 2;
+    flor.visible = false;
+    scene.add(flor);
+    floresNoChao.push(flor);
 }
 
 for (let i = 0; i < 120; i++) {
@@ -135,7 +175,49 @@ for (let i = 0; i < 10; i++) {
     scene.add(c); coins.push(c);
 }
 
-// Plataformas e Chest
+// LÓGICA DE ATUALIZAÇÃO DAS ESTAÇÕES
+function atualizarEstacoes() {
+    const agora = Date.now();
+    if (agora - tempoUltimaEstacao > estacaoDuracao) {
+        const index = estacoes.indexOf(estacaoAtual);
+        estacaoAtual = estacoes[(index + 1) % estacoes.length];
+        tempoUltimaEstacao = agora;
+        aplicarEfeitosEstacao();
+    }
+}
+
+function aplicarEfeitosEstacao() {
+    // Resetar visibilidade
+    folhasParticulas.forEach(f => f.visible = (estacaoAtual === "OUTONO"));
+    neveParticulas.forEach(n => n.visible = (estacaoAtual === "INVERNO"));
+    floresNoChao.forEach(fl => {
+        fl.visible = (estacaoAtual === "PRIMAVERA");
+        if (fl.visible) fl.position.set(Math.random() * 100 - 50, 0.01, Math.random() * 100 - 50);
+    });
+
+    // Mudar chão e árvores
+    if (estacaoAtual === "VERAO") {
+        groundMat.color.set(0xffffff);
+        listaArvores.forEach(a => a.leaf.material.color.set(0x2d5a27));
+    } else if (estacaoAtual === "PRIMAVERA") {
+        groundMat.color.set(0x99ff99);
+        listaArvores.forEach(a => a.leaf.material.color.set(0x2d5a27));
+    } else if (estacaoAtual === "OUTONO") {
+        groundMat.color.set(0xd2b48c);
+        listaArvores.forEach(a => a.leaf.material.color.set(Math.random() > 0.5 ? 0xffa500 : 0xffff00));
+        folhasParticulas.forEach(f => {
+            f.position.set(Math.random() * 100 - 50, 10 + Math.random() * 20, Math.random() * 100 - 50);
+        });
+    } else if (estacaoAtual === "INVERNO") {
+        groundMat.color.set(0xffffff);
+        listaArvores.forEach(a => a.leaf.material.color.set(0xeeeeee));
+        neveParticulas.forEach(n => {
+            n.position.set(Math.random() * 60 - 30 + camera.position.x, 20 + Math.random() * 10, Math.random() * 60 - 30 + camera.position.z);
+        });
+    }
+}
+
+// Plataformas e Chest (Código Original Mantido)
 const platforms = [], obstacles = [];
 const platMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8 });
 for (let i = 0; i < 15; i++) {
@@ -160,7 +242,7 @@ lock.position.set(0, 0.5, 0.4); chestGroup.add(lock);
 chestGroup.position.set(platforms[14].position.x, platforms[14].position.y + 0.25, platforms[14].position.z);
 scene.add(chestGroup);
 
-// Armas e Mãos
+// Armas e Mãos (Código Original Mantido)
 const handGroup = new THREE.Group();
 const handMesh = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.6), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
 handMesh.castShadow = true; handGroup.add(handMesh);
@@ -185,7 +267,7 @@ gunGroup.position.set(0, 0, -0.4); handGroup.add(gunGroup);
 const handPosIdle = new THREE.Vector3(0.5, -0.5, -0.8), handPosHip = new THREE.Vector3(0.5, -1.8, -0.5);
 handGroup.position.copy(handPosIdle); camera.add(handGroup); scene.add(camera);
 
-// Máquina de Garra e Bloqueio
+// Máquina de Garra e Bloqueio (Código Original Mantido)
 const machine = new THREE.Group();
 const mBase = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.5, 3.5), new THREE.MeshStandardMaterial({ color: 0xaa0000, metalness: 0.5 }));
 mBase.castShadow = true; machine.add(mBase);
@@ -224,7 +306,7 @@ for (let i = 0; i < 3; i++) {
 }
 clawSystem.add(cable, clawHead); clawSystem.position.set(0, 5, 0); machine.add(clawSystem);
 
-// Airdrops e Nextbots
+// Airdrops e Nextbots (Código Original Mantido)
 const airdrops = [];
 function createAirdrop(item, color, time) {
     const group = new THREE.Group();
@@ -273,7 +355,7 @@ const setupMBtn = (id, code) => {
     btn.addEventListener('touchend', (e) => { e.preventDefault(); handleKeyUp({ code: code }); });
 };
 
-// --- LÓGICA DE COMBATE E CHAT ---
+// --- LÓGICA DE COMBATE E CHAT (Original) ---
 function shoot() {
     if (currentEquip !== "GUN" || ammo <= 0 || gameState !== "WALK" || (!document.pointerLockElement && !isMobile)) return;
     ammo--; document.getElementById('ammo-val').innerText = ammo;
@@ -402,9 +484,33 @@ function endGame() {
 // --- LOOP DE ANIMAÇÃO ---
 function animate() {
     requestAnimationFrame(animate);
+    
     if (gameActive) {
+        atualizarEstacoes();
         let curT = Date.now() - startTime;
         document.getElementById('timer-val').innerText = (curT / 1000).toFixed(1);
+
+        // Animação de Folhas (Outono)
+        if (estacaoAtual === "OUTONO") {
+            folhasParticulas.forEach(f => {
+                f.position.y -= 0.05;
+                f.rotation.z += 0.02;
+                if (f.position.y < 0) f.position.y = 20;
+            });
+        }
+
+        // Animação de Neve (Inverno)
+        if (estacaoAtual === "INVERNO") {
+            neveParticulas.forEach(n => {
+                n.position.y -= 0.1;
+                n.position.x += Math.sin(Date.now() * 0.001 + n.position.z) * 0.02;
+                if (n.position.y < 0) {
+                    n.position.y = 20;
+                    n.position.x = camera.position.x + (Math.random() * 60 - 30);
+                    n.position.z = camera.position.z + (Math.random() * 60 - 30);
+                }
+            });
+        }
 
         if (isRunning && (moveF || moveB || moveL || moveR || joyActive) && stamina > 0) stamina -= 0.2;
         else if (stamina < 100) stamina += 0.15;
