@@ -446,7 +446,16 @@ function updateEquipVisuals() {
 }
 
 function desbloquearMaquina() { maquinaBloqueada = false; sistemaBloqueio.visible = false; segurandoR = false; document.getElementById('timer-lock').style.display = 'none'; }
-function exitMachine() { gameState = "WALK"; document.getElementById('game-info').style.display = 'none'; if (!isMobile) document.body.requestPointerLock(); camera.position.set(0, 1.7, -6) }
+function exitMachine() { 
+    gameState = "WALK"; 
+    document.getElementById('game-info').style.display = 'none'; 
+    camera.position.set(0, 1.7, -6);
+    
+    // Tenta prender o mouse logo ao sair da máquina
+    if (!isMobile) {
+        document.body.requestPointerLock();
+    }
+}
 
 function updateLeaderboard() { const s = JSON.parse(localStorage.getItem('arcadeScores') || "[]"); document.getElementById('score-list').innerHTML = s.sort((a, b) => a.time - b.time).slice(0, 5).map(x => `<div>${x.name}: ${x.time}s</div>`).join('') }
 
@@ -600,4 +609,9 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    // Detecta o clique na tela para prender o mouse de volta após um ESC
+renderer.domElement.addEventListener('click', () => {
+    if (gameActive && gameState === "WALK" && !isMobile) {
+        document.body.requestPointerLock();
+    }
 });
