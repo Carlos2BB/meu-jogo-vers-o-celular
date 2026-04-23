@@ -59,6 +59,42 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
+// --- FUNÇÕES DE AMBIENTE (NOVO: ARBUSTOS E PEDRAS) ---
+
+function createBush(x, z) {
+    const bushGroup = new THREE.Group();
+    const size = 0.5 + Math.random() * 0.8;
+    const mat = new THREE.MeshStandardMaterial({ color: 0x1a4a15 });
+    
+    for(let i = 0; i < 3; i++) {
+        const sphere = new THREE.Mesh(new THREE.DodecahedronGeometry(size), mat);
+        sphere.position.set(Math.random()*0.5, size/2, Math.random()*0.5);
+        sphere.castShadow = true;
+        bushGroup.add(sphere);
+    }
+    bushGroup.position.set(x, 0, z);
+    scene.add(bushGroup);
+}
+
+function createRock(x, z) {
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x808080 });
+    const rockGeo = new THREE.DodecahedronGeometry(0.4 + Math.random() * 1.2, 0);
+    const rock = new THREE.Mesh(rockGeo, rockMat);
+    rock.scale.y = 0.5 + Math.random();
+    rock.position.set(x, rock.scale.y * 0.2, z);
+    rock.rotation.set(Math.random(), Math.random(), Math.random());
+    rock.castShadow = true;
+    scene.add(rock);
+}
+
+// Gerando os novos elementos
+for(let i = 0; i < 60; i++) {
+    createBush(Math.random() * 300 - 150, Math.random() * 300 - 150);
+}
+for(let i = 0; i < 40; i++) {
+    createRock(Math.random() * 300 - 150, Math.random() * 300 - 150);
+}
+
 // --- FUNÇÕES DE INTERFACE ---
 window.selectPlatform = (type) => {
     isMobile = (type === 'mobile');
@@ -487,6 +523,17 @@ function animate() {
         let curT = Date.now() - startTime;
         document.getElementById('timer-val').innerText = (curT / 1000).toFixed(1);
 
+        // --- SISTEMA DE BIOMAS (NOVO) ---
+        // Se estiver longe (X ou Z > 100), vira bioma de DESERTO
+        if(Math.abs(camera.position.x) > 100 || Math.abs(camera.position.z) > 100) {
+            groundMat.color.lerp(new THREE.Color(0xedc9af), 0.01); // Areia
+            scene.background.lerp(new THREE.Color(0xffd700), 0.01); // Céu mais amarelado
+        } else {
+            // Volta para Grama se estiver perto do centro
+            groundMat.color.lerp(new THREE.Color(0xffffff), 0.01); 
+            scene.background.lerp(new THREE.Color(0x87CEEB), 0.01);
+        }
+
         if (estacaoAtual === "OUTONO") {
             folhasParticulas.forEach(f => {
                 f.position.y -= 0.05;
@@ -596,7 +643,6 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Correção para o mouse voltar após ESC ou clique na tela
 renderer.domElement.addEventListener('click', () => {
     if (gameActive && gameState === "WALK" && !isMobile) {
         document.body.requestPointerLock();
