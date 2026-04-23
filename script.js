@@ -625,3 +625,5 @@ document.addEventListener('click', () => {
         document.body.requestPointerLock();
     }
 });
+    });
+    });
