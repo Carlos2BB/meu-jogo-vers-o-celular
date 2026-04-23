@@ -20,15 +20,14 @@ const stick = document.getElementById('stick');
 
 // Configuração Three.js
 const scene = new THREE.Scene();
-// --- RESTAURADO: Céu Azul Original ---
 scene.background = new THREE.Color(0x87CEEB);
-// --- REMOVIDO: scene.fog (Neblina) ---
+scene.fog = new THREE.Fog(0x87CEEB, 10, 150);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-document.body.appendChild(renderer.shadowMap.element || renderer.domElement); // Correção leve para garantir compatibilidade
+document.body.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
@@ -38,16 +37,13 @@ const grassTexture = new THREE.TextureLoader().load('https://threejs.org/example
 grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
 grassTexture.repeat.set(100, 100);
 
-// --- RESTAURADO: Luz Branca Original ---
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(40, 60, 20);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
-// --- RESTAURADO: Luz Ambiente Branca Original ---
 scene.add(sun, new THREE.AmbientLight(0xffffff, 0.4));
 
-// --- RESTAURADO: Cor da Grama Original ---
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ map: grassTexture })); 
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ map: grassTexture }));
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
@@ -110,18 +106,15 @@ window.startGame = () => {
     }
 };
 
-// --- ADIÇÃO DO SISTEMA DE ÁRVORES GRANDES (MANTIDO) ---
+// --- CRIAÇÃO DE OBJETOS (ÁRVORES ATUALIZADAS) ---
 function createTree(x, z) {
     const g = new THREE.Group();
-    // Mantendo a escala grande das árvores
     const height = 20 + Math.random() * 25;
     const radius = 1.2 + Math.random() * 1.5;
 
-    // Tronco (Cor original restaurada implicitamente pela luz branca)
     const t = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.3, height, 8), new THREE.MeshStandardMaterial({ color: 0x4d2d18 }));
     t.position.y = height / 2; t.castShadow = true; g.add(t);
 
-    // Copa (Cor original restaurada)
     const f = new THREE.Mesh(new THREE.DodecahedronGeometry(height * 0.6, 0), new THREE.MeshStandardMaterial({ color: 0x2d5a27 }));
     f.position.y = height; f.castShadow = true; g.add(f);
     
@@ -129,13 +122,10 @@ function createTree(x, z) {
     scene.add(g);
 }
 
-// Mantendo a floresta densa e grande ao redor
 for (let i = 0; i < 120; i++) {
     let rx = Math.random() * 400 - 200, rz = Math.random() * 400 - 200;
-    // Evita árvores em cima da máquina
     if (Math.abs(rx) > 10 || (rz > -5 || rz < -15)) createTree(rx, rz);
 }
-// -----------------------------------------------------
 
 const coins = [];
 for (let i = 0; i < 10; i++) {
