@@ -59,11 +59,15 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// --- FUNÇÕES DE INTERFACE (WINDOW) ---
 window.selectPlatform = (type) => {
     isMobile = (type === 'mobile');
     document.getElementById('platform-screen').style.display = 'none';
     document.getElementById('setup-screen').style.display = 'flex';
+    
+    // Se for PC, solicita o bloqueio do mouse logo no primeiro clique
+    if (!isMobile) {
+        document.body.requestPointerLock();
+    }
 };
 
 window.selectSlot = (type) => {
@@ -102,12 +106,13 @@ window.startGame = () => {
     createAirdrop(items[1].type, items[1].col, 120000);
     createAirdrop(items[2].type, items[2].col, 180000);
 
-    gameState = "WALK";
-    if (!isMobile) document.body.requestPointerLock();
-    updateLeaderboard();
-    document.getElementById('prizes-val').innerText = prizesLeft;
-    updateEquipVisuals();
-
+    // Dentro da função window.startGame, quase no final:
+gameState = "WALK";
+if (!isMobile) {
+    document.body.requestPointerLock();
+}
+updateLeaderboard();
+    
     if (isMobile) {
         setupMBtn('btn-jump', 'Space');
         setupMBtn('btn-run', 'ShiftLeft');
@@ -611,6 +616,11 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     // Detecta o clique na tela para prender o mouse de volta após um ESC
 renderer.domElement.addEventListener('click', () => {
+    if (gameActive && gameState === "WALK" && !isMobile) {
+        document.body.requestPointerLock();
+    }
+    // Esta função garante que o mouse volte a funcionar se você clicar na tela
+document.addEventListener('click', () => {
     if (gameActive && gameState === "WALK" && !isMobile) {
         document.body.requestPointerLock();
     }
