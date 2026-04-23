@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// Variáveis de Estado e Globais
+// Variáveiss de Estado e Globais
 let isMobile = false;
 let pName = "", coinsCount = 0, prizesLeft = 10, gameState = "SETUP";
 let isClawDescending = false, caughtPrize = null, startTime = 0, gameActive = false;
