@@ -18,11 +18,12 @@ let joyX = 0, joyY = 0, joyActive = false, joyId = null;
 const base = document.getElementById('joy-base');
 const stick = document.getElementById('stick');
 
-// --- CONFIGURAÇÃO VISUAL AMAZÔNIA densa ---
+// Configuração Three.js
 const scene = new THREE.Scene();
-// Mudando o fundo e neblina para um verde oliva abafado e escuro
-scene.background = new THREE.Color(0x0a1a0a); 
-scene.fog = new THREE.Fog(0x0a1a0a, 15, 140); // Neblina próxima para clima fechado
+// --- AMBIENTE AMAZÔNICO ---
+const corFloresta = 0x051a05;
+scene.background = new THREE.Color(corFloresta);
+scene.fog = new THREE.Fog(corFloresta, 1, 60); // Neblina densa e próxima
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -33,136 +34,22 @@ document.body.appendChild(renderer.domElement);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.rotation.order = 'YXZ';
 
-// Texturas e Luzes (Ajustadas para selva)
+// Texturas e Luzes
 const grassTexture = new THREE.TextureLoader().load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
 grassTexture.repeat.set(100, 100);
 
-// Luz ligeiramente mais fraca e amarelada (luz filtrada pelas árvores)
-const sun = new THREE.DirectionalLight(0xffffee, 1.0); 
-sun.position.set(40, 60, 20);
+// Luz filtrada pela selva
+const sun = new THREE.DirectionalLight(0x446644, 1.2);
+sun.position.set(40, 80, 20);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
-// Ajuste da área de sombra para cobrir a floresta perto do jogador
-sun.shadow.camera.left = -100; sun.shadow.camera.right = 100; sun.shadow.camera.top = 100; sun.shadow.camera.bottom = -100;
-scene.add(sun, new THREE.AmbientLight(0x224422, 0.5)); // Luz ambiente esverdeada
+scene.add(sun, new THREE.AmbientLight(0x112211, 0.5));
 
-// Escurecendo a grama para tom de selva
-const groundMat = new THREE.MeshStandardMaterial({ map: grassTexture, color: 0x113311 }); 
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), groundMat);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ map: grassTexture, color: 0x113311 }));
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
-
-// --- MURO DE SELVA NO HORIZONTE (Sensação de imensidão) ---
-const jungleWallGeom = new THREE.CylinderGeometry(180, 180, 100, 32, 1, true);
-const jungleWallMat = new THREE.MeshBasicMaterial({ 
-    color: 0x051105, 
-    side: THREE.BackSide, 
-    fog: true 
-});
-const jungleWall = new THREE.Mesh(jungleWallGeom, jungleWallMat);
-jungleWall.position.y = 40; // Elevado para cobrir o horizonte
-scene.add(jungleWall);
-
-
-// --- SISTEMA DE FLORESTA AMAZÔNICA GIGANTE ---
-const treeTrunks = []; // Lista para colisão sólida
-
-// Materiais para árvores gigantes
-const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2311 }); // Marrom escuro curtido
-const leafMat = new THREE.MeshStandardMaterial({ color: 0x154415 }); // Verde selva escuro
-
-// 1. Árvores de Colisão Sólidas (Perto da área de jogo central)
-function createGiganticTree(x, z, scale) {
-    const group = new THREE.Group();
-    
-    // Tronco físico grosso e alto
-    const tMesh = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.8 * scale, 1.2 * scale, 20 * scale, 12), 
-        trunkMat
-    );
-    tMesh.position.y = 10 * scale; 
-    group.add(tMesh);
-    treeTrunks.push(tMesh); // Adiciona para colisão sólida
-
-    // Copa física (Dodecaedro facetado gigante)
-    const fMesh = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(6 * scale, 0), 
-        leafMat
-    );
-    fMesh.position.y = 20 * scale; 
-    group.add(fMesh);
-
-    group.position.set(x, 0, z);
-    
-    group.traverse(child => {
-        if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-        }
-    });
-    scene.add(group);
-}
-
-// Spawnar 60 árvores físicas sólidas na área central/jogável
-for (let i = 0; i < 60; i++) {
-    let rx, rz;
-    do {
-        rx = Math.random() * 200 - 100;
-        rz = Math.random() * 200 - 100;
-    } while (Math.abs(rx) < 15 && Math.abs(rz) < 15); // Área central da máquina livre
-    
-    const scale = 1.0 + Math.random() * 1.5; // Variação de escala (gigantes)
-    createGiganticTree(rx, rz, scale);
-}
-
-// 2. Floresta Instanciada de Fundo (Muitas árvores sem pesar)
-const INSTANCED_COUNT = 800; // 800 árvores visuais ao longe
-// Geometrias simples para desempenho
-const iTrunkGeom = new THREE.CylinderGeometry(0.5, 0.7, 15, 6);
-const iLeafGeom = new THREE.DodecahedronGeometry(5, 0);
-
-const instancedTrunks = new THREE.InstancedMesh(iTrunkGeom, trunkMat, INSTANCED_COUNT);
-instancedTrunks.castShadow = true; instancedTrunks.receiveShadow = true;
-scene.add(instancedTrunks);
-
-const instancedLeaves = new THREE.InstancedMesh(iLeafGeom, leafMat, INSTANCED_COUNT);
-instancedLeaves.castShadow = true;
-scene.add(instancedLeaves);
-
-const tempMatrix = new THREE.Matrix4();
-const tempPos = new THREE.Vector3();
-const tempQuat = new THREE.Quaternion();
-const tempScale = new THREE.Vector3();
-
-for (let i = 0; i < INSTANCED_COUNT; i++) {
-    // Spawn em uma área maior, ignorando o centro
-    let rx, rz;
-    do {
-        rx = Math.random() * 300 - 150;
-        rz = Math.random() * 300 - 150;
-    } while (Math.abs(rx) < 80 && Math.abs(rz) < 80); // Esfera de jogo central livre
-
-    const scale = 1.0 + Math.random() * 2.0;
-    
-    // Aplicar ao tronco instanciado
-    tempPos.set(rx, 7.5 * scale, rz);
-    tempScale.set(scale, scale, scale);
-    tempQuat.set(0, 0, 0, 1);
-    tempMatrix.compose(tempPos, tempQuat, tempScale);
-    instancedTrunks.setMatrixAt(i, tempMatrix);
-
-    // Aplicar à copa instanciada
-    tempPos.set(rx, 15 * scale, rz); // Copa no topo
-    tempMatrix.compose(tempPos, tempQuat, tempScale);
-    instancedLeaves.setMatrixAt(i, tempMatrix);
-}
-
-// Raycaster para colisão sólido-Tronco
-const collisionRaycaster = new THREE.Raycaster();
-const collisionDistance = 1.5; // Margem de colisão (grossura do tronco físico + margem)
-
 
 // --- FUNÇÕES DE INTERFACE (WINDOW) ---
 window.selectPlatform = (type) => {
@@ -221,6 +108,30 @@ window.startGame = () => {
         document.getElementById('btn-t').onclick = () => { handleKeyDown({ code: 'KeyT' }); };
     }
 };
+
+// --- CRIAÇÃO DA FLORESTA AMAZÔNICA ---
+function createAmazonTree(x, z) {
+    const g = new THREE.Group();
+    // Árvores enormes (escala aumentada)
+    const altura = 20 + Math.random() * 25;
+    const largura = 1.5 + Math.random() * 2;
+
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(largura * 0.7, largura, altura, 8), new THREE.MeshStandardMaterial({ color: 0x2b1d0e }));
+    t.position.y = altura / 2; t.castShadow = true; g.add(t);
+
+    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(altura * 0.6, 0), new THREE.MeshStandardMaterial({ color: 0x0a290a }));
+    f.position.y = altura; f.castShadow = true; g.add(f);
+    
+    g.position.set(x, 0, z);
+    scene.add(g);
+}
+
+// Floresta densa e grande
+for (let i = 0; i < 150; i++) {
+    let rx = Math.random() * 400 - 200, rz = Math.random() * 400 - 200;
+    // Evita árvores em cima da máquina
+    if (Math.abs(rx) > 10 || (rz > -5 || rz < -15)) createAmazonTree(rx, rz);
+}
 
 const coins = [];
 for (let i = 0; i < 10; i++) {
@@ -344,7 +255,7 @@ for (let i = 0; i < 15; i++) {
     m.visible = false; m.stunnedUntil = 0; scene.add(m); monsters.push(m);
 }
 
-// --- SISTEMA DE INPUTS ---
+// --- SISTEMA DE INPUTS (TOUCH E TECLADO) ---
 base.addEventListener('touchstart', e => { e.preventDefault(); const t = e.changedTouches[0]; joyId = t.identifier; joyActive = true; updateJoy(t); });
 base.addEventListener('touchmove', e => { e.preventDefault(); for (let i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === joyId) updateJoy(e.changedTouches[i]); });
 base.addEventListener('touchend', e => { for (let i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === joyId) { joyActive = false; joyId = null; joyX = 0; joyY = 0; stick.style.left = '50%'; stick.style.top = '50%'; } });
@@ -460,7 +371,8 @@ function updateEquipVisuals() {
 
 function desbloquearMaquina() { maquinaBloqueada = false; sistemaBloqueio.visible = false; segurandoR = false; document.getElementById('timer-lock').style.display = 'none'; }
 function exitMachine() { gameState = "WALK"; document.getElementById('game-info').style.display = 'none'; if (!isMobile) document.body.requestPointerLock(); camera.position.set(0, 1.7, -6) }
-function updateLeaderboard() { /* Leaderboard logic */ }
+
+function updateLeaderboard() { const s = JSON.parse(localStorage.getItem('arcadeScores') || "[]"); document.getElementById('score-list').innerHTML = s.sort((a, b) => a.time - b.time).slice(0, 5).map(x => `<div>${x.name}: ${x.time}s</div>`).join('') }
 
 function startFishing() {
     if (isClawDescending || coinsCount <= 0) return;
@@ -493,7 +405,7 @@ function endGame() {
     document.getElementById('end-screen').style.display = 'flex'; gameState = "END"
 }
 
-// --- LOOP DE ANIMAÇÃO PRINCIPAL ---
+// --- LOOP DE ANIMAÇÃO ---
 function animate() {
     requestAnimationFrame(animate);
     if (gameActive) {
@@ -565,58 +477,13 @@ function animate() {
             }
         });
 
-        // MOVIMENTAÇÃO DO JOGADOR COM COLISÃO
         if (document.pointerLockElement || isMobile) {
             const baseS = isFlying ? 0.6 : (isRunning && stamina > 0 ? 0.32 : 0.18);
             const d = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion); if (!isFlying) d.y = 0; d.normalize();
             const s = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), d);
-            
-            // --- MODIFICAÇÃO: CÁLCULO DE MOVIMENTO COM COLISÃO SÓLIDA ---
-            // Vetor que acumula a intenção de movimento do jogador nesta frame
-            let moveIntent = new THREE.Vector3(0, 0, 0);
-
-            if (moveF) moveIntent.addScaledVector(d, baseS);
-            if (moveB) moveIntent.addScaledVector(d, -baseS);
-            if (moveL) moveIntent.addScaledVector(s, baseS);
-            if (moveR) moveIntent.addScaledVector(s, -baseS);
-            if (joyActive) {
-                moveIntent.addScaledVector(d, -joyY * baseS);
-                moveIntent.addScaledVector(s, -joyX * baseS);
-            }
-
-            // Se o jogador está tentando se mover...
-            if (moveIntent.length() > 0) {
-                // Se estiver voando, ignoramos a colisão com troncos
-                if (isFlying) {
-                    camera.position.add(moveIntent);
-                } else {
-                    // SISTEMA DE COLISÃO NO CHÃO
-                    // 1. Clonamos a posição atual
-                    const currentPos = camera.position.clone();
-                    currentPos.y = 1.0; // Definimos a altura do tronco para o cálculo
-
-                    // 2. Apontamos o Raycaster para a direção que queremos ir
-                    const rayDir = moveIntent.clone().normalize();
-                    collisionRaycaster.set(currentPos, rayDir);
-
-                    // 3. Verificamos se há troncos sólidos à frente
-                    const intersects = collisionRaycaster.intersectObjects(treeTrunks);
-
-                    let blocked = false;
-                    if (intersects.length > 0) {
-                        // Se a distância do impacto for menor que a nossa margem, estamos bloqueados
-                        if (intersects[0].distance < collisionDistance) {
-                            blocked = true;
-                        }
-                    }
-
-                    // 4. Se não estiver bloqueado, aplicamos o movimento
-                    if (!blocked) {
-                        camera.position.add(moveIntent);
-                    }
-                }
-            }
-            // -----------------------------------------------------------
+            if (moveF) camera.position.addScaledVector(d, baseS); if (moveB) camera.position.addScaledVector(d, -baseS);
+            if (moveL) camera.position.addScaledVector(s, baseS); if (moveR) camera.position.addScaledVector(s, -baseS);
+            if (joyActive) { camera.position.addScaledVector(d, -joyY * baseS); camera.position.addScaledVector(s, -joyX * baseS); }
 
             let nearObj = false;
             if (maquinaBloqueada && camera.position.distanceTo(new THREE.Vector3(0, 1.2, -7.4)) < 3) { document.getElementById('prompt').innerText = "Segure [R] para desbloquear"; nearObj = true; }
@@ -628,6 +495,7 @@ function animate() {
 }
 animate();
 
+// Listener de redimensionamento
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
