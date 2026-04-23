@@ -13,25 +13,15 @@ let hasKnife = false, hasGun = false, hasBoots = false;
 let maquinaBloqueada = true, tempoCadeado = 30, segurandoR = false, nbScale = 1;
 let clawKeys = { left: false, right: false, up: false, down: false };
 
-// --- VARIÁVEIS DAS ESTAÇÕES (ATUALIZADO COM TERROR) ---
+// --- VARIÁVEIS DAS ESTAÇÕES ---
 let estacaoAtual = "VERAO"; 
-// Chance de 10% para TERROR, senão escolhe entre as outras 4
-const sorteioEstacao = Math.random();
-const estacoesNormais = ["VERAO", "PRIMAVERA", "OUTONO", "INVERNO"];
-if (sorteioEstacao < 0.1) {
-    estacaoAtual = "TERROR";
-} else {
-    estacaoAtual = estacoesNormais[Math.floor(Math.random() * estacoesNormais.length)];
-}
-
-const estacoes = ["VERAO", "PRIMAVERA", "OUTONO", "INVERNO", "TERROR"];
+const estacoes = ["VERAO", "PRIMAVERA", "OUTONO", "INVERNO"];
 let tempoUltimaEstacao = 0;
 const estacaoDuracao = 30000; 
 const folhasParticulas = [];
 const neveParticulas = [];
 const floresNoChao = [];
 const listaArvores = [];
-const arvoresTerror = []; // Lista para as 10 árvores especiais
 
 const chatInput = document.getElementById('game-chat');
 let joyX = 0, joyY = 0, joyActive = false, joyId = null;
@@ -57,9 +47,6 @@ const grassTexture = new THREE.TextureLoader().load('https://threejs.org/example
 grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
 grassTexture.repeat.set(100, 100);
 
-// Textura de Abóbora para o rosto (usando uma cor básica pois não posso carregar texturas externas novas)
-const pumpkinMat = new THREE.MeshStandardMaterial({ color: 0xff8800, roughness: 0.9 });
-
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(40, 60, 20);
 sun.castShadow = true;
@@ -72,13 +59,14 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// --- FUNÇÕES DE AMBIENTE ---
+// --- FUNÇÕES DE AMBIENTE (ATUALIZADO: MENOS OBJETOS, MAIS DETALHE) ---
 
 function createBush(x, z) {
     const bushGroup = new THREE.Group();
-    const size = 0.4 + Math.random() * 0.5; 
-    const mat = new THREE.MeshStandardMaterial({ color: 0x1a4a15, roughness: 0.9 }); 
+    const size = 0.4 + Math.random() * 0.5; // Arbustos ligeiramente menores
+    const mat = new THREE.MeshStandardMaterial({ color: 0x1a4a15, roughness: 0.9 }); // Mais opaco
     
+    // Criando um arbusto mais denso e bonito
     for(let i = 0; i < 5; i++) {
         const sphere = new THREE.Mesh(new THREE.DodecahedronGeometry(size, 1), mat);
         sphere.position.set((Math.random()-0.5)*0.6, size/1.5 + (Math.random()*0.2), (Math.random()-0.5)*0.6);
@@ -90,8 +78,8 @@ function createBush(x, z) {
 }
 
 function createRock(x, z) {
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x707070, roughness: 0.8 }); 
-    const rockGeo = new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.8, 0); 
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x707070, roughness: 0.8 }); // Cinza mais suave
+    const rockGeo = new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.8, 0); // Pedras menores
     const rock = new THREE.Mesh(rockGeo, rockMat);
     rock.scale.y = 0.4 + Math.random() * 0.6;
     rock.position.set(x, rock.scale.y * 0.15, z);
@@ -100,10 +88,11 @@ function createRock(x, z) {
     scene.add(rock);
 }
 
-for(let i = 0; i < 25; i++) { 
+// Gerando MENOS elementos para um visual mais limpo
+for(let i = 0; i < 25; i++) { // Reduzido de 60 para 25
     createBush(Math.random() * 250 - 125, Math.random() * 250 - 125);
 }
-for(let i = 0; i < 15; i++) { 
+for(let i = 0; i < 15; i++) { // Reduzido de 40 para 15
     createRock(Math.random() * 250 - 125, Math.random() * 250 - 125);
 }
 
@@ -118,7 +107,6 @@ window.selectPlatform = (type) => {
 window.selectSlot = (type) => {
     if (type === 'KNIFE' && !hasKnife) return;
     if (type === 'GUN' && !hasGun) return;
-    if (type === 'SHOTGUN' && currentEquip !== 'SHOTGUN' && estacaoAtual !== 'TERROR') return; // Bloqueia shotgun fora do terror
     if (equipAnimPhase === "IDLE") { nextEquip = type; equipAnimPhase = "DOWN"; }
 };
 
@@ -137,12 +125,6 @@ window.startGame = () => {
     startTime = Date.now();
     tempoUltimaEstacao = Date.now();
     gameActive = true;
-
-    // Se a estação for TERROR, adiciona a Shotgun no slot 4
-    if (estacaoAtual === "TERROR") {
-        document.getElementById('slot-4').style.display = 'flex';
-        document.getElementById('slot-4').innerText = "4: ESPINGARDA";
-    }
     
     prizesInside.forEach((p, i) => { p.visible = i < prizesLeft });
     monsters.forEach((m, i) => {
@@ -157,9 +139,6 @@ window.startGame = () => {
     createAirdrop(items[0].type, items[0].col, 60000);
     createAirdrop(items[1].type, items[1].col, 120000);
     createAirdrop(items[2].type, items[2].col, 180000);
-
-    // Aplica os efeitos da estação inicial (incluindo o céu roxo se for TERROR)
-    aplicarEfeitosEstacao();
 
     gameState = "WALK";
     if (!isMobile) document.body.requestPointerLock();
@@ -177,29 +156,26 @@ window.startGame = () => {
     }
 };
 
-// --- CRIAÇÃO DE OBJETOS (ATUALIZADO: ÁRVORES COM SUPORTE A TERROR) ---
-function createTree(x, z, index) {
+// --- CRIAÇÃO DE OBJETOS (ATUALIZADO: ÁRVORES COM GALHOS) ---
+function createTree(x, z) {
     const g = new THREE.Group();
-    const trunkHeight = 15 + Math.random() * 15; 
+    const trunkHeight = 15 + Math.random() * 15; // Altura do tronco reduzida ligeiramente
     const trunkRadius = 0.8 + Math.random() * 0.7;
     const trunkColor = 0x5d3d28;
 
     // Tronco principal
     const tMat = new THREE.MeshStandardMaterial({ color: trunkColor, roughness: 0.9 });
-    const tGeo = new THREE.CylinderGeometry(trunkRadius * 0.8, trunkRadius, trunkHeight, 10);
-    const t = new THREE.Mesh(tGeo, tMat);
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(trunkRadius * 0.8, trunkRadius, trunkHeight, 10), tMat);
     t.position.y = trunkHeight / 2; t.castShadow = true; g.add(t);
 
-    // Folhagem principal
+    // Folhagem principal (uma dodecaedro mais suave)
     const fColor = 0x2d5a27;
     const fMat = new THREE.MeshStandardMaterial({ color: fColor, roughness: 0.8 });
     const foliageSize = trunkHeight * 0.5;
-    const fGeo = new THREE.DodecahedronGeometry(foliageSize, 1);
-    const f = new THREE.Mesh(fGeo, fMat);
+    const f = new THREE.Mesh(new THREE.DodecahedronGeometry(foliageSize, 1), fMat);
     f.position.y = trunkHeight + foliageSize * 0.4; f.castShadow = true; g.add(f);
 
-    // Galhos
-    const tBranchMat = new THREE.MeshStandardMaterial({ color: trunkColor, roughness: 0.9 });
+    // --- ADICIONANDO GALHOS DETALHADOS ---
     const numGalhos = 3 + Math.floor(Math.random() * 3);
     for(let i = 0; i < numGalhos; i++) {
         const angle = (i / numGalhos) * Math.PI * 2 + Math.random();
@@ -208,70 +184,34 @@ function createTree(x, z, index) {
         const branchRadius = trunkRadius * 0.3;
 
         const branchGroup = new THREE.Group();
+
+        // O próprio galho
         const bGeo = new THREE.CylinderGeometry(branchRadius*0.7, branchRadius, branchLength, 8);
-        const b = new THREE.Mesh(bGeo, tBranchMat);
-        b.rotation.z = Math.PI / 2; 
+        const b = new THREE.Mesh(bGeo, tMat);
+        b.rotation.z = Math.PI / 2; // Deita o cilindro
         b.position.x = branchLength / 2;
         b.castShadow = true;
         branchGroup.add(b);
 
+        // Pequena folhagem na ponta do galho
         const fbSize = branchLength * 0.4;
         const fbMat = new THREE.MeshStandardMaterial({ color: fColor, roughness: 0.8 });
-        const fbGeo = new THREE.DodecahedronGeometry(fbSize, 0);
-        const fb = new THREE.Mesh(fbGeo, fbMat);
+        const fb = new THREE.Mesh(new THREE.DodecahedronGeometry(fbSize, 0), fbMat);
         fb.position.x = branchLength;
         fb.castShadow = true;
         branchGroup.add(fb);
 
+        // Posiciona e rotaciona o grupo do galho no tronco
         branchGroup.position.set(Math.cos(angle)*trunkRadius*0.8, branchHeight, Math.sin(angle)*trunkRadius*0.8);
         branchGroup.rotation.y = angle;
-        branchGroup.rotation.z = Math.PI / 4 + (Math.random()-0.5)*0.2; 
+        branchGroup.rotation.z = Math.PI / 4 + (Math.random()-0.5)*0.2; // Inclina para cima
 
         g.add(branchGroup);
     }
     
-    // --- ADICIONANDO ELEMENTOS DE TERROR (ESCONDIDOS POR PADRÃO) ---
-    const terrorGroup = new THREE.Group();
-    terrorGroup.visible = false; // Só aparece na estação TERROR
-
-    // Rosto de Abóbora no tronco
-    const faceGeo = new THREE.SphereGeometry(trunkRadius * 1.2, 16, 12);
-    const face = new THREE.Mesh(faceGeo, pumpkinMat);
-    face.position.y = trunkHeight * 0.6;
-    face.position.z = trunkRadius; // À frente do tronco
-    terrorGroup.add(face);
-
-    // Pernas (Cilindros simples)
-    const legGeo = new THREE.CylinderGeometry(branchRadius, branchRadius, trunkHeight * 0.4, 8);
-    const legL = new THREE.Mesh(legGeo, tMat);
-    legL.position.set(-trunkRadius * 0.5, trunkHeight * 0.2, 0);
-    const legR = new THREE.Mesh(legGeo, tMat);
-    legR.position.set(trunkRadius * 0.5, trunkHeight * 0.2, 0);
-    terrorGroup.add(legL, legR);
-
-    // Braços (Cilindros saindo do rosto/tronco)
-    const armGeo = new THREE.CylinderGeometry(branchRadius, branchRadius, trunkHeight * 0.5, 8);
-    const armL = new THREE.Mesh(armGeo, tMat);
-    armL.rotation.z = Math.PI / 2;
-    armL.position.set(-branchLength * 0.8, trunkHeight * 0.6, branchRadius);
-    const armR = new THREE.Mesh(armGeo, tMat);
-    armR.rotation.z = -Math.PI / 2;
-    armR.position.set(branchLength * 0.8, trunkHeight * 0.6, branchRadius);
-    terrorGroup.add(armL, armR);
-
-    g.add(terrorGroup);
-    
     g.position.set(x, 0, z);
     scene.add(g);
-    
-    const treeData = { group: g, leaf: f, trunk: t, terror: terrorGroup, isTerrorInstance: false, speed: nbSpeed * 0.5 };
-    listaArvores.push(treeData);
-
-    // Seleciona as primeiras 10 árvores para serem mutantes
-    if (index < 10) {
-        treeData.isTerrorInstance = true;
-        arvoresTerror.push(treeData);
-    }
+    listaArvores.push({ group: g, leaf: f }); // Nota: Apenas a folhagem principal muda de cor nas estações
 }
 
 for (let i = 0; i < 50; i++) {
@@ -297,10 +237,9 @@ for (let i = 0; i < 100; i++) {
     floresNoChao.push(flor);
 }
 
-// Criação das árvores passando o índice
 for (let i = 0; i < 120; i++) {
     let rx = Math.random() * 400 - 200, rz = Math.random() * 400 - 200;
-    if (Math.abs(rx) > 10 || (rz > -5 || rz < -15)) createTree(rx, rz, i);
+    if (Math.abs(rx) > 10 || (rz > -5 || rz < -15)) createTree(rx, rz);
 }
 
 const coins = [];
@@ -322,7 +261,6 @@ function atualizarEstacoes() {
 }
 
 function aplicarEfeitosEstacao() {
-    // Resetar visibilidade e estados específicos
     folhasParticulas.forEach(f => f.visible = (estacaoAtual === "OUTONO"));
     neveParticulas.forEach(n => n.visible = (estacaoAtual === "INVERNO"));
     floresNoChao.forEach(fl => {
@@ -330,64 +268,20 @@ function aplicarEfeitosEstacao() {
         if (fl.visible) fl.position.set(Math.random() * 100 - 50, 0.01, Math.random() * 100 - 50);
     });
 
-    // Resetar árvores de terror
-    arvoresTerror.forEach(a => a.terror.visible = false);
-
-    // Inventário Shotgun (Slot 4)
-    if (estacaoAtual === "TERROR") {
-        document.getElementById('slot-4').style.display = 'flex';
-    } else {
-        document.getElementById('slot-4').style.display = 'none';
-        if (currentEquip === 'SHOTGUN') selectSlot('NONE'); // Desequipa se mudar de estação
-    }
-
     if (estacaoAtual === "VERAO") {
         groundMat.color.set(0xffffff);
-        listaArvores.forEach(a => {
-            a.leaf.material.color.set(0x2d5a27);
-            a.group.visible = true;
-        });
-        scene.background.set(0x87CEEB); // Céu Normal
+        listaArvores.forEach(a => a.leaf.material.color.set(0x2d5a27));
     } else if (estacaoAtual === "PRIMAVERA") {
         groundMat.color.set(0x99ff99);
-        listaArvores.forEach(a => {
-            a.leaf.material.color.set(0x2d5a27);
-            a.group.visible = true;
-        });
-        scene.background.set(0x87CEEB);
+        listaArvores.forEach(a => a.leaf.material.color.set(0x2d5a27));
     } else if (estacaoAtual === "OUTONO") {
         groundMat.color.set(0xd2b48c);
-        listaArvores.forEach(a => {
-            a.leaf.material.color.set(Math.random() > 0.5 ? 0xffa500 : 0xffff00);
-            a.group.visible = true;
-        });
+        listaArvores.forEach(a => a.leaf.material.color.set(Math.random() > 0.5 ? 0xffa500 : 0xffff00));
         folhasParticulas.forEach(f => { f.position.set(Math.random() * 100 - 50, 10 + Math.random() * 20, Math.random() * 100 - 50); });
-        scene.background.set(0x87CEEB);
     } else if (estacaoAtual === "INVERNO") {
         groundMat.color.set(0xffffff);
-        listaArvores.forEach(a => {
-            a.leaf.material.color.set(0xeeeeee);
-            a.group.visible = true;
-        });
+        listaArvores.forEach(a => a.leaf.material.color.set(0xeeeeee));
         neveParticulas.forEach(n => { n.position.set(Math.random() * 60 - 30 + camera.position.x, 20 + Math.random() * 10, Math.random() * 60 - 30 + camera.position.z); });
-        scene.background.set(0x87CEEB);
-    } else if (estacaoAtual === "TERROR") {
-        groundMat.color.set(0x330033); // Chão escuro/roxo
-        scene.background.set(0x440044); // Céu Roxo
-        listaArvores.forEach(a => {
-            a.leaf.material.color.set(0x111111); // Folhas pretas/escuras
-            a.leaf.visible = true; // Garante que a folhagem principal esteja visível (sem flores)
-            // Esconde galhos normais e suas folhagens para dar aspecto mais seco
-            a.group.children.forEach(child => {
-                if (child instanceof THREE.Group && child !== a.terror) {
-                    child.visible = false;
-                }
-            });
-        });
-        // Ativa as 10 árvores mutantes
-        arvoresTerror.forEach(a => {
-            a.terror.visible = true;
-        });
     }
 }
 
@@ -416,17 +310,10 @@ lock.position.set(0, 0.5, 0.4); chestGroup.add(lock);
 chestGroup.position.set(platforms[14].position.x, platforms[14].position.y + 0.25, platforms[14].position.z);
 scene.add(chestGroup);
 
-// Armas e Mãos (ATUALIZADO COM SHOTGUN DE DUAS MÃOS)
+// Armas e Mãos
 const handGroup = new THREE.Group();
 const handMesh = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.6), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
 handMesh.castShadow = true; handGroup.add(handMesh);
-
-// Mão Esquerda (para shotgun)
-const handLeftGroup = new THREE.Group();
-const handLeftMesh = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.6), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-handLeftMesh.castShadow = true; handLeftGroup.add(handLeftMesh);
-handLeftGroup.position.set(-1.0, -0.5, -0.8); // Posição para segurar com as duas mãos
-camera.add(handLeftGroup);
 
 const knifeGroup = new THREE.Group();
 const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.35), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 }));
@@ -444,18 +331,6 @@ muzzleFlash.position.z = -0.4;
 const shotLight = new THREE.PointLight(0xffaa00, 0, 5);
 shotLight.position.z = -0.4; gunGroup.add(muzzleFlash, shotLight);
 gunGroup.position.set(0, 0, -0.4); handGroup.add(gunGroup);
-
-// Espingarda (Shotgun) - Maior e segurada no centro
-const shotgunGroup = new THREE.Group();
-const sgBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.2, 8), new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 }));
-sgBarrel.rotation.x = Math.PI / 2; sgBarrel.position.z = -0.6;
-const sgBody = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.25, 0.8), new THREE.MeshStandardMaterial({ color: 0x4d2d18 })); // Coronha de madeira
-sgBody.position.z = 0;
-const sgMuzzleFlash = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0 }));
-sgMuzzleFlash.position.z = -1.2;
-shotgunGroup.add(sgBarrel, sgBody, sgMuzzleFlash);
-shotgunGroup.position.set(-0.5, -0.4, -0.5); // Centralizada entre as mãos
-camera.add(shotgunGroup); // Adiciona direto à câmera para controle de duas mãos
 
 const handPosIdle = new THREE.Vector3(0.5, -0.5, -0.8), handPosHip = new THREE.Vector3(0.5, -1.8, -0.5);
 handGroup.position.copy(handPosIdle); camera.add(handGroup); scene.add(camera);
@@ -548,34 +423,15 @@ const setupMBtn = (id, code) => {
     btn.addEventListener('touchend', (e) => { e.preventDefault(); handleKeyUp({ code: code }); });
 };
 
-// --- LÓGICA DE COMBATE E CHAT (ATUALIZADO PARA SHOTGUN) ---
+// --- LÓGICA DE COMBATE E CHAT ---
 function shoot() {
-    if (gameState !== "WALK" || (!document.pointerLockElement && !isMobile)) return;
-
-    if (currentEquip === "GUN" && ammo > 0) {
-        ammo--; document.getElementById('ammo-val').innerText = ammo;
-        muzzleFlash.material.opacity = 1; shotLight.intensity = 5; handGroup.position.z += 0.25;
-        setTimeout(() => { muzzleFlash.material.opacity = 0; shotLight.intensity = 0 }, 60);
-        const r = new THREE.Raycaster(); r.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const inters = r.intersectObjects(monsters);
-        if (inters.length > 0) inters[0].object.stunnedUntil = Date.now() + 5000;
-    } else if (currentEquip === "SHOTGUN") {
-        // Lógica de tiro da espingarda (sem munição consumível pedida, apenas efeito e dano)
-        sgMuzzleFlash.material.opacity = 1;
-        shotgunGroup.position.z += 0.4; // Recuo maior
-        handLeftGroup.position.z += 0.4;
-        handGroup.position.z += 0.4;
-
-        setTimeout(() => { sgMuzzleFlash.material.opacity = 0; }, 80);
-
-        // Raio para atingir monstros
-        const r = new THREE.Raycaster(); r.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const inters = r.intersectObjects(monsters);
-        if (inters.length > 0) {
-            // Atordoa por mais tempo
-            inters[0].object.stunnedUntil = Date.now() + 8000;
-        }
-    }
+    if (currentEquip !== "GUN" || ammo <= 0 || gameState !== "WALK" || (!document.pointerLockElement && !isMobile)) return;
+    ammo--; document.getElementById('ammo-val').innerText = ammo;
+    muzzleFlash.material.opacity = 1; shotLight.intensity = 5; handGroup.position.z += 0.25;
+    setTimeout(() => { muzzleFlash.material.opacity = 0; shotLight.intensity = 0 }, 60);
+    const r = new THREE.Raycaster(); r.setFromCamera(new THREE.Vector2(0, 0), camera);
+    const inters = r.intersectObjects(monsters);
+    if (inters.length > 0) inters[0].object.stunnedUntil = Date.now() + 5000;
 }
 
 chatInput.addEventListener('keydown', (e) => {
@@ -629,7 +485,7 @@ const handleKeyDown = e => {
             }
         }
         if (equipAnimPhase === "IDLE") {
-            if (e.code === 'Digit1') selectSlot('NONE'); if (e.code === 'Digit2') selectSlot('KNIFE'); if (e.code === 'Digit3') selectSlot('GUN'); if (e.code === 'Digit4') selectSlot('SHOTGUN');
+            if (e.code === 'Digit1') selectSlot('NONE'); if (e.code === 'Digit2') selectSlot('KNIFE'); if (e.code === 'Digit3') selectSlot('GUN');
         }
     } else if (gameState === "CLAW") {
         if (e.code === 'ArrowLeft') clawKeys.left = true; if (e.code === 'ArrowRight') clawKeys.right = true; if (e.code === 'ArrowUp') clawKeys.up = true; if (e.code === 'ArrowDown') clawKeys.down = true;
@@ -649,16 +505,11 @@ document.addEventListener('mousemove', e => { if (document.pointerLockElement &&
 
 // --- UTILITÁRIOS ---
 function updateEquipVisuals() {
-    knifeGroup.visible = (currentEquip === "KNIFE"); 
-    gunGroup.visible = (currentEquip === "GUN");
-    shotgunGroup.visible = (currentEquip === "SHOTGUN");
-    handLeftGroup.visible = (currentEquip === "SHOTGUN"); // Mão esquerda só aparece com shotgun
-
+    knifeGroup.visible = (currentEquip === "KNIFE"); gunGroup.visible = (currentEquip === "GUN");
     document.querySelectorAll('.inv-slot').forEach(s => s.classList.remove('active'));
     if (currentEquip === "NONE") document.getElementById('slot-1').classList.add('active');
     if (currentEquip === "KNIFE") document.getElementById('slot-2').classList.add('active');
     if (currentEquip === "GUN") document.getElementById('slot-3').classList.add('active');
-    if (currentEquip === "SHOTGUN") document.getElementById('slot-4').classList.add('active');
     if (hasBoots) { document.getElementById('slot-boots').style.borderColor = "#00ff88"; document.getElementById('slot-boots').style.color = "#00ff88"; }
 }
 
@@ -717,13 +568,11 @@ function animate() {
         // Se estiver longe (X ou Z > 100), vira bioma de DESERTO
         if(Math.abs(camera.position.x) > 100 || Math.abs(camera.position.z) > 100) {
             groundMat.color.lerp(new THREE.Color(0xedc9af), 0.01); // Areia
-            if (estacaoAtual !== "TERROR") scene.background.lerp(new THREE.Color(0xffd700), 0.01); // Céu mais amarelado
+            scene.background.lerp(new THREE.Color(0xffd700), 0.01); // Céu mais amarelado
         } else {
             // Volta para Grama se estiver perto do centro
-            if (estacaoAtual !== "TERROR") {
-                groundMat.color.lerp(new THREE.Color(0xffffff), 0.01); 
-                scene.background.lerp(new THREE.Color(0x87CEEB), 0.01);
-            }
+            groundMat.color.lerp(new THREE.Color(0xffffff), 0.01); 
+            scene.background.lerp(new THREE.Color(0x87CEEB), 0.01);
         }
 
         if (estacaoAtual === "OUTONO") {
@@ -742,23 +591,6 @@ function animate() {
                     n.position.y = 20;
                     n.position.x = camera.position.x + (Math.random() * 60 - 30);
                     n.position.z = camera.position.z + (Math.random() * 60 - 30);
-                }
-            });
-        }
-
-        // --- LÓGICA ARVORES TERROR ---
-        if (estacaoAtual === "TERROR" && !botsPaused) {
-            arvoresTerror.forEach(a => {
-                // Olha para o jogador
-                a.group.lookAt(camera.position.x, a.group.position.y, camera.position.z);
-                // Move em direção ao jogador
-                const d = new THREE.Vector3().subVectors(camera.position, a.group.position).normalize();
-                a.group.position.x += d.x * a.speed;
-                a.group.position.z += d.z * a.speed;
-
-                // Colisão (reseta posição se muito perto)
-                if (a.group.position.distanceTo(camera.position) < 3.0) {
-                    camera.position.set(0, 1.7, -6);
                 }
             });
         }
@@ -794,18 +626,6 @@ function animate() {
         } else if (equipAnimPhase === "UP") {
             handGroup.position.lerp(handPosIdle, 0.15);
             if (handGroup.position.distanceTo(handPosIdle) < 0.05) { handGroup.position.copy(handPosIdle); equipAnimPhase = "IDLE" }
-        }
-        
-        // Lerp Suave para recuo das armas
-        muzzleFlash.material.opacity = THREE.MathUtils.lerp(muzzleFlash.material.opacity, 0, 0.1);
-        sgMuzzleFlash.material.opacity = THREE.MathUtils.lerp(sgMuzzleFlash.material.opacity, 0, 0.1);
-        
-        if (currentEquip === "SHOTGUN") {
-            shotgunGroup.position.z = THREE.MathUtils.lerp(shotgunGroup.position.z, -0.5, 0.2);
-            handLeftGroup.position.z = THREE.MathUtils.lerp(handLeftGroup.position.z, -0.8, 0.2);
-            handGroup.position.z = THREE.MathUtils.lerp(handGroup.position.z, -0.8, 0.2);
-        } else {
-            handGroup.position.z = THREE.MathUtils.lerp(handGroup.position.z, -0.8, 0.2);
         }
 
         if (!isFlying) {
